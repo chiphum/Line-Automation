@@ -44,7 +44,6 @@ BUTTON_TEXT = (255, 255, 255)
 PANEL_BG = (232, 237, 243)
 PANEL_BORDER = (190, 198, 208)
 LEGEND_BG = (248, 250, 252)
-OVERLAY_BG = (255, 255, 255, 220)
 
 VEHICLE_BLUE = (47, 99, 163)
 VEHICLE_YELLOW = (232, 193, 33)
@@ -57,16 +56,16 @@ SPLIT_LINE_YELLOW = (220, 190, 80)
 TITLE_X = 40
 TITLE_Y = 20
 TAKT_X = 40
-TAKT_Y = 70
+TAKT_Y = 68
 VERSION_X = 250
-VERSION_Y = 70
+VERSION_Y = 68
 STATUS_X = 410
-STATUS_Y = 70
+STATUS_Y = 68
 
 CONTROL_PANEL_X = 40
 CONTROL_PANEL_Y = 110
-CONTROL_PANEL_W = 1520
-CONTROL_PANEL_H = 112
+CONTROL_PANEL_W = 1200
+CONTROL_PANEL_H = 104
 
 MAIN_LABEL_OFFSET_Y = 60
 BRANCH_LABEL_OFFSET_Y = 45
@@ -387,22 +386,6 @@ def get_vehicle_xy(route, pitch_float, aux_route=None, aux_progress=0.0):
 # ----------------------------
 # Drawing helpers
 # ----------------------------
-def create_fonts(presentation_mode=False):
-    if presentation_mode:
-        title_font = pygame.font.SysFont("arial", 42, bold=True)
-        subtitle_font = pygame.font.SysFont("arial", 28)
-        label_font = pygame.font.SysFont("arial", 26, bold=True)
-        small_font = pygame.font.SysFont("arial", 20)
-        button_font = pygame.font.SysFont("arial", 22, bold=True)
-    else:
-        title_font = pygame.font.SysFont("arial", 32, bold=True)
-        subtitle_font = pygame.font.SysFont("arial", 22)
-        label_font = pygame.font.SysFont("arial", 20, bold=True)
-        small_font = pygame.font.SysFont("arial", 16)
-        button_font = pygame.font.SysFont("arial", 20, bold=True)
-    return (title_font, subtitle_font, label_font, small_font, button_font)
-
-
 def draw_text(surface, text, font, color, x, y, center=False):
     rendered = font.render(text, True, color)
     rect = rendered.get_rect()
@@ -450,8 +433,7 @@ def draw_button(surface, rect, font, text, mouse_pos, base_color=BUTTON_BLUE, ho
     is_hovered = rect.collidepoint(mouse_pos)
     color = hover_color if is_hovered else base_color
     pygame.draw.rect(surface, color, rect, border_radius=8)
-    border_color = ACCENT_BLUE if base_color == BUTTON_BLUE else PANEL_BORDER
-    pygame.draw.rect(surface, border_color, rect, width=2, border_radius=8)
+    pygame.draw.rect(surface, ACCENT_BLUE if base_color == BUTTON_BLUE else PANEL_BORDER, rect, width=2, border_radius=8)
     draw_text(surface, text, font, BUTTON_TEXT, rect.centerx, rect.centery, center=True)
 
 
@@ -508,7 +490,7 @@ def draw_output_main_line(surface, label_font, show_labels=True):
         draw_pitch(surface, label_font, i, output_main_pitch_rect(i), "O", show_labels=show_labels)
 
 
-def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels, fullscreen, presentation_mode):
+def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels):
     _, subtitle_font, _, _, button_font = fonts
     mouse_pos = pygame.mouse.get_pos()
 
@@ -536,25 +518,23 @@ def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_spee
     draw_button(surface, buttons["preset_blue"], button_font, "Blue Faster", mouse_pos)
     draw_button(surface, buttons["preset_yellow"], button_font, "Yellow Faster", mouse_pos)
 
-    draw_text(surface, f"Pitch Labels: {'On' if show_labels else 'Off'}", subtitle_font, SUBTLE_TEXT, CONTROL_PANEL_X + 1010, CONTROL_PANEL_Y + 14)
+    draw_text(surface, f"Pitch Labels: {'On' if show_labels else 'Off'}", subtitle_font, SUBTLE_TEXT, CONTROL_PANEL_X + 990, CONTROL_PANEL_Y + 50)
     draw_button(surface, buttons["toggle_labels"], button_font, "Labels", mouse_pos, base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
-    draw_button(surface, buttons["toggle_fullscreen"], button_font, "Windowed" if fullscreen else "Fullscreen", mouse_pos, base_color=BUTTON_BLUE, hover_color=BUTTON_BLUE_HOVER)
-    draw_button(surface, buttons["toggle_presentation"], button_font, "Present On" if presentation_mode else "Present Off", mouse_pos, base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
 
 
-def draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor, fullscreen, presentation_mode):
-    _, _, label_font, small_font, _ = fonts
-    box = pygame.Rect(1260, 24, 300, 212)
+def draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor):
+    _, subtitle_font, label_font, small_font, _ = fonts
+    box = pygame.Rect(1260, 24, 300, 190)
     pygame.draw.rect(surface, LEGEND_BG, box, border_radius=12)
     pygame.draw.rect(surface, PANEL_BORDER, box, width=2, border_radius=12)
 
     draw_text(surface, "Legend", label_font, TITLE_COLOR, box.x + 16, box.y + 12)
 
     pygame.draw.circle(surface, VEHICLE_BLUE, (box.x + 28, box.y + 52), 10)
-    draw_text(surface, "Blue vehicle → blue branch", small_font, TEXT_COLOR, box.x + 46, box.y + 43)
+    draw_text(surface, "Blue vehicle -> blue branch", small_font, TEXT_COLOR, box.x + 46, box.y + 43)
 
     pygame.draw.circle(surface, VEHICLE_YELLOW, (box.x + 28, box.y + 86), 10)
-    draw_text(surface, "Yellow vehicle → yellow branch", small_font, TEXT_COLOR, box.x + 46, box.y + 77)
+    draw_text(surface, "Yellow vehicle -> yellow branch", small_font, TEXT_COLOR, box.x + 46, box.y + 77)
 
     pygame.draw.line(surface, SPLIT_LINE_BLUE, (box.x + 16, box.y + 122), (box.x + 40, box.y + 122), 4)
     draw_text(surface, "Blue split / merge path", small_font, TEXT_COLOR, box.x + 46, box.y + 113)
@@ -566,58 +546,26 @@ def draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor, 
     draw_text(surface, f"Status: {status_text}", small_font, TITLE_COLOR, box.x + 170, box.y + 16)
     draw_text(surface, f"Blue: {blue_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 170, box.y + 44)
     draw_text(surface, f"Yellow: {yellow_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 170, box.y + 68)
-    draw_text(surface, f"Fullscreen: {'On' if fullscreen else 'Off'}", small_font, SUBTLE_TEXT, box.x + 170, box.y + 92)
-    draw_text(surface, f"Present: {'On' if presentation_mode else 'Off'}", small_font, SUBTLE_TEXT, box.x + 170, box.y + 116)
-    draw_text(surface, "Step advances one takt", small_font, SUBTLE_TEXT, box.x + 170, box.y + 144)
+    draw_text(surface, "Step advances one takt", small_font, SUBTLE_TEXT, box.x + 170, box.y + 104)
 
 
-def draw_shortcuts_bar(surface, small_font, presentation_mode):
-    text = "Space Pause/Play   Right Step   F Fullscreen   P Presentation   L Labels   R Reset"
-    if presentation_mode:
-        overlay = pygame.Surface((980, 34), pygame.SRCALPHA)
-        overlay.fill(OVERLAY_BG)
-        surface.blit(overlay, (40, SCREEN_HEIGHT - 52))
-        pygame.draw.rect(surface, PANEL_BORDER, pygame.Rect(40, SCREEN_HEIGHT - 52, 980, 34), width=1, border_radius=8)
-        draw_text(surface, text, small_font, TITLE_COLOR, 54, SCREEN_HEIGHT - 45)
-    else:
-        draw_text(surface, text, small_font, SUBTLE_TEXT, 40, SCREEN_HEIGHT - 32)
-
-
-def draw_presentation_banner(surface, fonts, paused, blue_speed_factor, yellow_speed_factor):
-    _, subtitle_font, _, small_font, _ = fonts
-    overlay = pygame.Surface((480, 90), pygame.SRCALPHA)
-    overlay.fill(OVERLAY_BG)
-    surface.blit(overlay, (SCREEN_WIDTH - 520, 18))
-    box = pygame.Rect(SCREEN_WIDTH - 520, 18, 480, 90)
-    pygame.draw.rect(surface, PANEL_BORDER, box, width=1, border_radius=10)
-    draw_text(surface, "Presentation Mode", subtitle_font, TITLE_COLOR, box.x + 16, box.y + 12)
-    draw_text(surface, f"Status: {'Paused' if paused else 'Running'}", small_font, SUBTLE_TEXT, box.x + 18, box.y + 48)
-    draw_text(surface, f"Blue {blue_speed_factor:.2f}x   Yellow {yellow_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 180, box.y + 48)
-
-
-def draw_scene(surface, vehicles, takt_display, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels, fullscreen, presentation_mode):
+def draw_scene(surface, fonts, vehicles, takt_display, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels):
     surface.fill(BG_COLOR)
 
-    fonts = create_fonts(presentation_mode=presentation_mode)
-    title_font, subtitle_font, label_font, small_font, _ = fonts
-
-    effective_show_labels = False if presentation_mode else show_labels
+    title_font, subtitle_font, label_font, _, _ = fonts
 
     draw_text(surface, "Main Line Splits Into Blue and Yellow Branches, Then Merges Back", title_font, TITLE_COLOR, TITLE_X, TITLE_Y)
     draw_text(surface, f"Takt: {takt_display}", subtitle_font, TEXT_COLOR, TAKT_X, TAKT_Y)
     draw_text(surface, f"Version: {version.get_version()}", subtitle_font, TEXT_COLOR, VERSION_X, VERSION_Y)
     draw_text(surface, f"Status: {'Paused' if paused else 'Running'}", subtitle_font, TEXT_COLOR, STATUS_X, STATUS_Y)
 
-    if presentation_mode:
-        draw_presentation_banner(surface, fonts, paused, blue_speed_factor, yellow_speed_factor)
-    else:
-        draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels, fullscreen, presentation_mode)
-        draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor, fullscreen, presentation_mode)
+    draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels)
+    draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor)
 
-    draw_input_main_line(surface, label_font, show_labels=effective_show_labels)
-    draw_branch_line(surface, label_font, "blue_branch", "BLUE BRANCH", "B", show_labels=effective_show_labels)
-    draw_branch_line(surface, label_font, "yellow_branch", "YELLOW BRANCH", "Y", show_labels=effective_show_labels)
-    draw_output_main_line(surface, label_font, show_labels=effective_show_labels)
+    draw_input_main_line(surface, label_font, show_labels=show_labels)
+    draw_branch_line(surface, label_font, "blue_branch", "BLUE BRANCH", "B", show_labels=show_labels)
+    draw_branch_line(surface, label_font, "yellow_branch", "YELLOW BRANCH", "Y", show_labels=show_labels)
+    draw_output_main_line(surface, label_font, show_labels=show_labels)
 
     draw_connector(surface, get_split_path_points("blue_branch"), SPLIT_LINE_BLUE)
     draw_connector(surface, get_split_path_points("yellow_branch"), SPLIT_LINE_YELLOW)
@@ -643,8 +591,6 @@ def draw_scene(surface, vehicles, takt_display, buttons, blue_speed_factor, yell
         elif vehicle.route == "merging":
             x, y = get_vehicle_xy("merging", 0.0, vehicle.merge_source_route, vehicle.merge_progress)
             draw_vehicle(surface, x, y, 1.0, vehicle.color)
-
-    draw_shortcuts_bar(surface, small_font, presentation_mode)
 
 
 # ----------------------------
@@ -863,22 +809,21 @@ def step_one_takt(vehicles, next_vehicle_id, elapsed_since_takt, current_takt, m
     return vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state
 
 
-def create_display(fullscreen=False):
-    flags = pygame.SCALED
-    if fullscreen:
-        flags |= pygame.FULLSCREEN
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), flags)
-    pygame.display.set_caption(f"{version.APP_NAME} v{version.get_version()}")
-    return screen
-
-
 # ----------------------------
 # Main loop
 # ----------------------------
 def main():
     pygame.init()
-    screen = create_display(fullscreen=False)
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption(f"{version.APP_NAME} v{version.get_version()}")
     clock = pygame.time.Clock()
+
+    title_font = pygame.font.SysFont("arial", 32, bold=True)
+    subtitle_font = pygame.font.SysFont("arial", 22)
+    label_font = pygame.font.SysFont("arial", 20, bold=True)
+    small_font = pygame.font.SysFont("arial", 16)
+    button_font = pygame.font.SysFont("arial", 20, bold=True)
+    fonts = (title_font, subtitle_font, label_font, small_font, button_font)
 
     buttons = {
         "blue_minus": pygame.Rect(CONTROL_PANEL_X + 100, CONTROL_PANEL_Y + 34, 42, 34),
@@ -891,17 +836,13 @@ def main():
         "preset_balanced": pygame.Rect(CONTROL_PANEL_X + 768, CONTROL_PANEL_Y + 34, 110, 38),
         "preset_blue": pygame.Rect(CONTROL_PANEL_X + 888, CONTROL_PANEL_Y + 34, 132, 38),
         "preset_yellow": pygame.Rect(CONTROL_PANEL_X + 1030, CONTROL_PANEL_Y + 34, 142, 38),
-        "toggle_labels": pygame.Rect(CONTROL_PANEL_X + 1210, CONTROL_PANEL_Y + 16, 114, 34),
-        "toggle_fullscreen": pygame.Rect(CONTROL_PANEL_X + 1336, CONTROL_PANEL_Y + 16, 136, 34),
-        "toggle_presentation": pygame.Rect(CONTROL_PANEL_X + 1210, CONTROL_PANEL_Y + 58, 262, 34),
+        "toggle_labels": pygame.Rect(CONTROL_PANEL_X + 1050, CONTROL_PANEL_Y + 68, 122, 28),
     }
 
     blue_branch_speed_factor = INITIAL_BLUE_BRANCH_SPEED_FACTOR
     yellow_branch_speed_factor = INITIAL_YELLOW_BRANCH_SPEED_FACTOR
     paused = False
     show_labels = True
-    fullscreen = False
-    presentation_mode = False
 
     vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = reset_simulation()
 
@@ -920,17 +861,12 @@ def main():
                     vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = reset_simulation()
                 elif event.key == pygame.K_l:
                     show_labels = not show_labels
-                elif event.key == pygame.K_f:
-                    fullscreen = not fullscreen
-                    screen = create_display(fullscreen=fullscreen)
-                elif event.key == pygame.K_p:
-                    presentation_mode = not presentation_mode
                 elif event.key == pygame.K_RIGHT and paused:
                     vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = step_one_takt(
                         vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state, blue_branch_speed_factor, yellow_branch_speed_factor
                     )
 
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not presentation_mode:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if buttons["play_pause"].collidepoint(event.pos):
                     paused = not paused
                 elif buttons["step"].collidepoint(event.pos):
@@ -958,11 +894,6 @@ def main():
                     blue_branch_speed_factor, yellow_branch_speed_factor = apply_preset("yellow_faster")
                 elif buttons["toggle_labels"].collidepoint(event.pos):
                     show_labels = not show_labels
-                elif buttons["toggle_fullscreen"].collidepoint(event.pos):
-                    fullscreen = not fullscreen
-                    screen = create_display(fullscreen=fullscreen)
-                elif buttons["toggle_presentation"].collidepoint(event.pos):
-                    presentation_mode = not presentation_mode
 
         if not paused:
             vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = simulate_increment(
@@ -978,6 +909,7 @@ def main():
 
         draw_scene(
             screen,
+            fonts,
             vehicles,
             current_takt,
             buttons,
@@ -985,8 +917,6 @@ def main():
             yellow_branch_speed_factor,
             paused,
             show_labels,
-            fullscreen,
-            presentation_mode,
         )
         pygame.display.flip()
 
