@@ -271,18 +271,21 @@ def get_split_path_points(target_route):
 def get_merge_path_points(source_route):
     last_pitch = NUM_PITCHES_BLUE if source_route == "blue_branch" else NUM_PITCHES_YELLOW
     rect = branch_pitch_rect(source_route, last_pitch)
+
     start_x = rect.x + rect.width
     start_y = rect.y + rect.height / 2
 
     target_x, target_y = merge_target()
-    elbow_x = start_x + LAYOUT["merge_gap_x"] // 2
+
+    # MIRROR of split behavior
+    elbow_x = start_x + 5
     end_x = target_x - 4
 
     return [
         (float(start_x), float(start_y)),
-        (float(elbow_x), float(start_y)),
-        (float(end_x), float(target_y)),
-        (float(target_x), float(target_y)),
+        (float(elbow_x), float(start_y)),       # short horizontal out
+        (float(end_x), float(target_y)),        # vertical-ish move toward merge
+        (float(target_x), float(target_y)),     # final entry
     ]
 
 
