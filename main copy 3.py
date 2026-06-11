@@ -1,16 +1,6 @@
 import pygame
 import sys
-
-try:
-    import version
-except ImportError:
-    class version:
-        APP_NAME = "Assembly Line Simulator"
-
-        @staticmethod
-        def get_version():
-            return "0.4.1"
-
+import version
 
 # ----------------------------
 # Configuration
@@ -120,9 +110,6 @@ PRESETS = {
     "blue_faster": (0.90, 0.30),
     "yellow_faster": (0.35, 0.90),
 }
-
-# CAD-style connector geometry
-CONNECTOR_OFFSET = 22
 
 
 # ----------------------------
@@ -268,20 +255,16 @@ def interpolate_position(rect_a, rect_b, frac):
 def get_split_path_points(target_route):
     split_x, split_y = split_origin()
     rect = branch_pitch_rect(target_route, 1)
-    target_x = rect.x
-    target_y = rect.y + rect.height / 2
+    branch_center_y = rect.y + rect.height / 2
 
-    elbow_x = split_x + CONNECTOR_OFFSET
-    lead_in_x = target_x - CONNECTOR_OFFSET
-    mid_y = (split_y + target_y) / 2
+    elbow_x = split_x + 5
+    end_x = rect.x - 4
 
     return [
         (float(split_x), float(split_y)),
         (float(elbow_x), float(split_y)),
-        (float(elbow_x), float(mid_y)),
-        (float(lead_in_x), float(mid_y)),
-        (float(lead_in_x), float(target_y)),
-        (float(target_x), float(target_y)),
+        (float(end_x), float(branch_center_y)),
+        (float(rect.x), float(branch_center_y)),
     ]
 
 
@@ -294,17 +277,15 @@ def get_merge_path_points(source_route):
 
     target_x, target_y = merge_target()
 
-    elbow_x = start_x + CONNECTOR_OFFSET
-    lead_in_x = target_x - CONNECTOR_OFFSET
-    mid_y = (start_y + target_y) / 2
+    # MIRROR of split behavior
+    elbow_x = start_x + 5
+    end_x = target_x - 4
 
     return [
         (float(start_x), float(start_y)),
-        (float(elbow_x), float(start_y)),
-        (float(elbow_x), float(mid_y)),
-        (float(lead_in_x), float(mid_y)),
-        (float(lead_in_x), float(target_y)),
-        (float(target_x), float(target_y)),
+        (float(elbow_x), float(start_y)),       # short horizontal out
+        (float(end_x), float(target_y)),        # vertical-ish move toward merge
+        (float(target_x), float(target_y)),     # final entry
     ]
 
 

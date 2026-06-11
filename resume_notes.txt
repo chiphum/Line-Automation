@@ -1,0 +1,75 @@
+ASSEMBLY LINE SIM - WHERE TO PICK UP (Next Session)
+
+Date: Resume here next time
+
+---------------------------------
+CURRENT STATE
+---------------------------------
+- CAD-style split and merge routing implemented
+- Split and merge paths are now symmetric
+- CONNECTOR_OFFSET controls visual spacing
+- Simulation runs using pygame with UI controls
+
+---------------------------------
+IMMEDIATE TODO (START HERE)
+---------------------------------
+1. Open project folder
+2. Run: python main.py
+3. Verify:
+   - Split and merge look symmetric
+   - Vehicles flow correctly
+
+---------------------------------
+FIRST TUNING STEP (10 minutes)
+---------------------------------
+Adjust this value in main.py:
+
+CONNECTOR_OFFSET = 22
+
+Try:
+- 22 (current)
+- 26 (recommended for cleaner engineering look)
+- 30 (wide spacing)
+
+Goal:
+- Make pathways look clean and balanced
+- Match real conveyor spacing feel
+
+---------------------------------
+NEXT UPGRADE OPTIONS (Pick one)
+---------------------------------
+OPTION 1 – VISUAL (Recommended for presentations)
+- Add rounded corners to paths
+- Makes layout look like real conveyor CAD
+
+OPTION 2 – ENGINEERING VALUE
+- Add throughput counter
+- Add branch utilization display
+
+OPTION 3 – DEBUG / ANALYSIS
+- Highlight blocked vehicles
+- Identify bottlenecks at merge
+
+---------------------------------
+LONGER TERM IDEAS
+---------------------------------
+- Gap-based merge logic (instead of fairness toggle)
+- Scenario comparison (balanced vs blue faster vs yellow faster)
+- Export frames for presentation slides
+
+---------------------------------
+NOTES
+---------------------------------
+- Keep version updated in version.py
+- Save new versions when making major changes
+- Use presentation mode for reviews
+
+---------------------------------
+QUICK START TOMORROW
+---------------------------------
+cd assembly_line_sim
+python main.py
+
+---------------------------------
+END OF FILE
+---------------------------------

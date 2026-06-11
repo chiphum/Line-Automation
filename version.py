@@ -1,7 +1,4 @@
-APP_NAME = "Assembly Line Split-Merge Simulator"
-__version__ = "0.4.0"
-BUILD_DATE = "2026-06-11"
-
+APP_NAME = "Assembly Line Simulator"
 
 def get_version():
-    return __version__
+    return "0.4.1"
