@@ -18,7 +18,7 @@ SPLIT_PITCH = NUM_PITCHES_MAIN
 TAKT_TIME_MAIN = 1.2
 INITIAL_YELLOW_BRANCH_SPEED_FACTOR = 0.25
 INITIAL_BLUE_BRANCH_SPEED_FACTOR = 0.75
-MAX_VEHICLES = 40
+MAX_VEHICLES = 200
 
 DIAGRAM_SCALE = 0.50
 
@@ -85,9 +85,8 @@ SPEED_STEP = 0.05
 MIN_SPEED_FACTOR = 0.05
 MAX_SPEED_FACTOR = 2.00
 
-# merge animation tuning
-MERGE_TRAVEL_TIME = 0.45
-
+SPLIT_TRAVEL_TIME = 0.99
+MERGE_TRAVEL_TIME = 0.99
 # ----------------------------
 # Dynamic fit-to-screen layout
 # ----------------------------
@@ -134,14 +133,18 @@ class Vehicle:
     def __init__(self, vehicle_id):
         self.vehicle_id = vehicle_id
         self.color = VEHICLE_YELLOW if vehicle_id % 4 == 0 else VEHICLE_BLUE
+
         self.route = "main"
         self.main_pitch_float = 1.0
         self.branch_pitch_float = None
         self.out_pitch_float = None
 
-        self.is_merging = False
+        self.split_target_route = None
+        self.split_progress = 0.0
+
         self.merge_source_route = None
         self.merge_progress = 0.0
+        self.merge_reserved = False
 
     def is_yellow(self):
         return self.color == VEHICLE_YELLOW
@@ -162,6 +165,8 @@ class Vehicle:
             return self.branch_pitch_float <= NUM_PITCHES_YELLOW + 0.8
         if self.route == "out_main" and self.out_pitch_float is not None:
             return self.out_pitch_float <= NUM_PITCHES_OUT + 0.8
+        if self.route == "splitting":
+            return True
         if self.route == "merging":
             return True
         return False
@@ -171,9 +176,6 @@ class Vehicle:
 # ----------------------------
 def pitch_width():
     return LAYOUT["pitch_width"]
-
-def pitch_gap():
-    return LAYOUT["pitch_gap"]
 
 def pitch_step():
     return LAYOUT["pitch_step"]
@@ -216,6 +218,21 @@ def interpolate_position(rect_a, rect_b, frac):
     x = rect_a.x + (rect_b.x - rect_a.x) * frac
     y = rect_a.y + (rect_b.y - rect_a.y) * frac
     return x, y
+
+def get_split_path_points(target_route):
+    split_x, split_y = split_origin()
+    rect = branch_pitch_rect(target_route, 1)
+    branch_center_y = rect.y + rect.height / 2
+
+    elbow_x = split_x + 5
+    end_x = rect.x - 4
+
+    return [
+        (float(split_x), float(split_y)),
+        (float(elbow_x), float(split_y)),
+        (float(end_x), float(branch_center_y)),
+        (float(rect.x), float(branch_center_y)),
+    ]
 
 def get_merge_path_points(source_route):
     last_pitch = NUM_PITCHES_BLUE if source_route == "blue_branch" else NUM_PITCHES_YELLOW
@@ -264,7 +281,7 @@ def point_on_polyline(points, t):
 
     return points[-1]
 
-def get_vehicle_xy(route, pitch_float, merge_source_route=None, merge_progress=0.0):
+def get_vehicle_xy(route, pitch_float, aux_route=None, aux_progress=0.0):
     if route == "main":
         if pitch_float <= 1:
             rect = main_pitch_rect(1)
@@ -321,9 +338,14 @@ def get_vehicle_xy(route, pitch_float, merge_source_route=None, merge_progress=0
         x, y = interpolate_position(rect_a, rect_b, frac)
         return x + pitch_width() * 0.12, y + PITCH_HEIGHT * 0.42
 
-    if route == "merging" and merge_source_route is not None:
-        points = get_merge_path_points(merge_source_route)
-        x, y = point_on_polyline(points, merge_progress)
+    if route == "splitting" and aux_route is not None:
+        points = get_split_path_points(aux_route)
+        x, y = point_on_polyline(points, aux_progress)
+        return x, y - PITCH_HEIGHT * 0.08
+
+    if route == "merging" and aux_route is not None:
+        points = get_merge_path_points(aux_route)
+        x, y = point_on_polyline(points, aux_progress)
         return x, y - PITCH_HEIGHT * 0.08
 
     return 0, 0
@@ -378,30 +400,12 @@ def draw_button(surface, rect, font, text, mouse_pos):
     draw_text(surface, text, font, BUTTON_TEXT, rect.centerx, rect.centery, center=True)
 
 def draw_split_connector(surface, branch_name, color):
-    split_x, split_y = split_origin()
-    rect = branch_pitch_rect(branch_name, 1)
-    branch_center_y = rect.y + rect.height / 2
-
-    elbow_x = split_x + 5
-    end_x = rect.x - 4
-
-    points = [
-        (int(split_x), int(split_y)),
-        (int(elbow_x), int(split_y)),
-        (int(end_x), int(branch_center_y)),
-        (int(rect.x), int(branch_center_y)),
-    ]
-    pygame.draw.lines(surface, color, False, points, 3)
+    points = get_split_path_points(branch_name)
+    pygame.draw.lines(surface, color, False, [(int(x), int(y)) for x, y in points], 3)
 
 def draw_merge_connector(surface, branch_name, color):
     points = get_merge_path_points(branch_name)
-    pygame.draw.lines(
-        surface,
-        color,
-        False,
-        [(int(x), int(y)) for x, y in points],
-        3
-    )
+    pygame.draw.lines(surface, color, False, [(int(x), int(y)) for x, y in points], 3)
 
 def draw_input_main_line(surface, label_font):
     first_rect = main_pitch_rect(1)
@@ -520,6 +524,9 @@ def draw_scene(surface, fonts, vehicles, takt_display, buttons, blue_speed_facto
         elif vehicle.route == "out_main" and vehicle.out_pitch_float is not None:
             x, y = get_vehicle_xy("out_main", vehicle.out_pitch_float)
             draw_vehicle(surface, x, y, 1.0, vehicle.color)
+        elif vehicle.route == "splitting":
+            x, y = get_vehicle_xy("splitting", 0.0, vehicle.split_target_route, vehicle.split_progress)
+            draw_vehicle(surface, x, y, 1.0, vehicle.color)
         elif vehicle.route == "merging":
             x, y = get_vehicle_xy("merging", 0.0, vehicle.merge_source_route, vehicle.merge_progress)
             draw_vehicle(surface, x, y, 1.0, vehicle.color)
@@ -552,6 +559,18 @@ def update_output_main_line(out_vehicles, delta_pitch_main):
             proposed_position = vehicle.out_pitch_float + delta_pitch_main
             vehicle.out_pitch_float = min(proposed_position, target_position)
 
+def update_splitting_vehicles(vehicles, dt):
+    for vehicle in vehicles:
+        if vehicle.route == "splitting":
+            vehicle.split_progress += dt / SPLIT_TRAVEL_TIME
+            if vehicle.split_progress >= 1.0:
+                target_route = vehicle.split_target_route
+                vehicle.route = target_route
+                vehicle.branch_pitch_float = 1.0
+                vehicle.main_pitch_float = None
+                vehicle.split_progress = 0.0
+                vehicle.split_target_route = None
+
 def update_merging_vehicles(vehicles, dt):
     for vehicle in vehicles:
         if vehicle.route == "merging":
@@ -561,10 +580,12 @@ def update_merging_vehicles(vehicles, dt):
                 vehicle.out_pitch_float = 1.0
                 vehicle.merge_progress = 0.0
                 vehicle.merge_source_route = None
-                vehicle.is_merging = False
+                vehicle.merge_reserved = False
 
 def try_split_branch(vehicles, color_check, target_route, min_spacing):
     branch_vehicles = [v for v in vehicles if v.route == target_route and v.branch_pitch_float is not None]
+    splitting_vehicles = [v for v in vehicles if v.route == "splitting" and v.split_target_route == target_route]
+
     last_branch_position = min([v.branch_pitch_float for v in branch_vehicles], default=None)
 
     candidates = [
@@ -578,27 +599,24 @@ def try_split_branch(vehicles, color_check, target_route, min_spacing):
 
     for vehicle in candidates:
         can_enter = False
-        if last_branch_position is None:
-            can_enter = True
-        elif last_branch_position >= 1.0 + min_spacing:
-            can_enter = True
+
+        if len(splitting_vehicles) == 0:
+            if last_branch_position is None:
+                can_enter = True
+            elif last_branch_position >= 1.0 + min_spacing:
+                can_enter = True
 
         if can_enter:
-            vehicle.route = target_route
-            vehicle.branch_pitch_float = 1.0
+            vehicle.route = "splitting"
+            vehicle.split_target_route = target_route
+            vehicle.split_progress = 0.0
             vehicle.main_pitch_float = None
-            branch_vehicles.append(vehicle)
-            last_branch_position = 1.0
+            splitting_vehicles.append(vehicle)
         else:
             vehicle.main_pitch_float = SPLIT_PITCH
 
-def try_merge_to_output_main(vehicles, source_route):
+def find_merge_candidate(vehicles, source_route):
     last_branch_pitch = NUM_PITCHES_BLUE if source_route == "blue_branch" else NUM_PITCHES_YELLOW
-
-    any_merging = any(v.route == "merging" for v in vehicles)
-    out_vehicles = [v for v in vehicles if v.route == "out_main" and v.out_pitch_float is not None]
-    last_out_position = min([v.out_pitch_float for v in out_vehicles], default=None)
-
     candidates = [
         v for v in vehicles
         if v.route == source_route
@@ -606,32 +624,60 @@ def try_merge_to_output_main(vehicles, source_route):
         and v.branch_pitch_float >= last_branch_pitch
     ]
     candidates.sort(key=lambda v: v.vehicle_id)
+    return candidates[0] if candidates else None
 
-    for vehicle in candidates:
-        can_enter_merge = False
+def can_release_to_merge(vehicles):
+    if any(v.route == "merging" for v in vehicles):
+        return False
 
-        if not any_merging:
-            if last_out_position is None:
-                can_enter_merge = True
-            elif last_out_position >= 1.0 + OUT_MAIN_MIN_SPACING:
-                can_enter_merge = True
+    out_vehicles = [v for v in vehicles if v.route == "out_main" and v.out_pitch_float is not None]
+    last_out_position = min([v.out_pitch_float for v in out_vehicles], default=None)
 
-        if can_enter_merge:
-            vehicle.route = "merging"
-            vehicle.merge_source_route = source_route
-            vehicle.merge_progress = 0.0
-            vehicle.branch_pitch_float = None
-            vehicle.is_merging = True
-            any_merging = True
+    if last_out_position is None:
+        return True
+    return last_out_position >= 1.0 + OUT_MAIN_MIN_SPACING
+
+def try_merge_with_fairness(vehicles, merge_state):
+    blue_candidate = find_merge_candidate(vehicles, "blue_branch")
+    yellow_candidate = find_merge_candidate(vehicles, "yellow_branch")
+
+    if not can_release_to_merge(vehicles):
+        return
+
+    chosen = None
+
+    if blue_candidate and yellow_candidate:
+        if merge_state["next_priority"] == "blue":
+            chosen = blue_candidate
+            merge_state["next_priority"] = "yellow"
         else:
-            vehicle.branch_pitch_float = last_branch_pitch
+            chosen = yellow_candidate
+            merge_state["next_priority"] = "blue"
+    elif blue_candidate:
+        chosen = blue_candidate
+        merge_state["next_priority"] = "yellow"
+    elif yellow_candidate:
+        chosen = yellow_candidate
+        merge_state["next_priority"] = "blue"
+
+    if chosen is not None:
+        chosen.route = "merging"
+        chosen.merge_source_route = "blue_branch" if chosen.route != "yellow_branch" and chosen.is_blue() else "yellow_branch"
+        if chosen.color == VEHICLE_BLUE:
+            chosen.merge_source_route = "blue_branch"
+        else:
+            chosen.merge_source_route = "yellow_branch"
+        chosen.merge_progress = 0.0
+        chosen.branch_pitch_float = None
+        chosen.merge_reserved = True
 
 def reset_simulation():
     vehicles = [Vehicle(1)]
     next_vehicle_id = 2
     elapsed_since_takt = 0.0
     current_takt = 1
-    return vehicles, next_vehicle_id, elapsed_since_takt, current_takt
+    merge_state = {"next_priority": "blue"}
+    return vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state
 
 def clamp(value, min_value, max_value):
     return max(min_value, min(max_value, value))
@@ -664,7 +710,7 @@ def main():
     blue_branch_speed_factor = INITIAL_BLUE_BRANCH_SPEED_FACTOR
     yellow_branch_speed_factor = INITIAL_YELLOW_BRANCH_SPEED_FACTOR
 
-    vehicles, next_vehicle_id, elapsed_since_takt, current_takt = reset_simulation()
+    vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = reset_simulation()
 
     running = True
     while running:
@@ -677,7 +723,7 @@ def main():
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if buttons["reset"].collidepoint(event.pos):
-                    vehicles, next_vehicle_id, elapsed_since_takt, current_takt = reset_simulation()
+                    vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = reset_simulation()
                     blue_branch_speed_factor = INITIAL_BLUE_BRANCH_SPEED_FACTOR
                     yellow_branch_speed_factor = INITIAL_YELLOW_BRANCH_SPEED_FACTOR
                 elif buttons["blue_minus"].collidepoint(event.pos):
@@ -708,6 +754,8 @@ def main():
             min_spacing=YELLOW_BRANCH_MIN_SPACING
         )
 
+        update_splitting_vehicles(vehicles, dt)
+
         blue_branch_vehicles = [v for v in vehicles if v.route == "blue_branch" and v.branch_pitch_float is not None]
         yellow_branch_vehicles = [v for v in vehicles if v.route == "yellow_branch" and v.branch_pitch_float is not None]
 
@@ -724,9 +772,7 @@ def main():
             delta_pitch_main=delta_pitch_main
         )
 
-        try_merge_to_output_main(vehicles, "blue_branch")
-        try_merge_to_output_main(vehicles, "yellow_branch")
-
+        try_merge_with_fairness(vehicles, merge_state)
         update_merging_vehicles(vehicles, dt)
 
         out_main_vehicles = [v for v in vehicles if v.route == "out_main" and v.out_pitch_float is not None]
