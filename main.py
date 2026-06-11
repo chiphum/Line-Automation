@@ -25,16 +25,25 @@ DIAGRAM_SCALE = 0.50
 
 BG_COLOR = (245, 247, 250)
 TEXT_COLOR = (50, 60, 70)
+SUBTLE_TEXT = (95, 110, 125)
 TITLE_COLOR = (36, 52, 71)
 LINE_COLOR = (210, 214, 220)
 LINE_BORDER = (130, 140, 150)
 ACCENT_GREEN = (76, 175, 80)
 ACCENT_BLUE = (52, 120, 189)
+ACCENT_ORANGE = (227, 138, 50)
 BUTTON_BLUE = (52, 120, 189)
 BUTTON_BLUE_HOVER = (72, 140, 209)
+BUTTON_GREEN = (76, 175, 80)
+BUTTON_GREEN_HOVER = (96, 195, 100)
+BUTTON_ORANGE = (227, 138, 50)
+BUTTON_ORANGE_HOVER = (240, 156, 72)
+BUTTON_GRAY = (110, 122, 136)
+BUTTON_GRAY_HOVER = (128, 140, 154)
 BUTTON_TEXT = (255, 255, 255)
 PANEL_BG = (232, 237, 243)
 PANEL_BORDER = (190, 198, 208)
+LEGEND_BG = (248, 250, 252)
 
 VEHICLE_BLUE = (47, 99, 163)
 VEHICLE_YELLOW = (232, 193, 33)
@@ -44,19 +53,19 @@ RAIL_COLOR = (180, 185, 192)
 SPLIT_LINE_BLUE = (120, 150, 210)
 SPLIT_LINE_YELLOW = (220, 190, 80)
 
-HEADER_TOP = 16
-HEADER_HEIGHT = 130
 TITLE_X = 40
 TITLE_Y = 20
 TAKT_X = 40
 TAKT_Y = 68
 VERSION_X = 250
 VERSION_Y = 68
+STATUS_X = 410
+STATUS_Y = 68
 
 CONTROL_PANEL_X = 40
 CONTROL_PANEL_Y = 110
-CONTROL_PANEL_W = 780
-CONTROL_PANEL_H = 92
+CONTROL_PANEL_W = 1200
+CONTROL_PANEL_H = 104
 
 MAIN_LABEL_OFFSET_Y = 60
 BRANCH_LABEL_OFFSET_Y = 45
@@ -91,6 +100,12 @@ MAX_SPEED_FACTOR = 2.00
 
 SPLIT_TRAVEL_TIME = 0.99
 MERGE_TRAVEL_TIME = 0.99
+
+PRESETS = {
+    "balanced": (0.50, 0.50),
+    "blue_faster": (0.90, 0.30),
+    "yellow_faster": (0.35, 0.90),
+}
 
 
 # ----------------------------
@@ -159,10 +174,6 @@ class Vehicle:
 
     def is_blue(self):
         return self.color == VEHICLE_BLUE
-
-    def update_main(self, delta_pitch):
-        if self.main_pitch_float is not None:
-            self.main_pitch_float += delta_pitch
 
     def is_on_screen(self):
         if self.route == "main" and self.main_pitch_float is not None:
@@ -385,13 +396,14 @@ def draw_text(surface, text, font, color, x, y, center=False):
     surface.blit(rendered, rect)
 
 
-def draw_pitch(surface, font, pitch_num, rect, prefix):
+def draw_pitch(surface, font, pitch_num, rect, prefix, show_labels=True):
     pygame.draw.rect(surface, LINE_COLOR, rect, border_radius=6)
     pygame.draw.rect(surface, LINE_BORDER, rect, width=2, border_radius=6)
 
-    label = font.render(f"{prefix}{pitch_num}", True, TEXT_COLOR)
-    label_rect = label.get_rect(center=(rect.centerx, rect.bottom + 14))
-    surface.blit(label, label_rect)
+    if show_labels:
+        label = font.render(f"{prefix}{pitch_num}", True, TEXT_COLOR)
+        label_rect = label.get_rect(center=(rect.centerx, rect.bottom + 14))
+        surface.blit(label, label_rect)
 
 
 def draw_vehicle(surface, x, y, scale, body_color):
@@ -417,56 +429,40 @@ def draw_vehicle(surface, x, y, scale, body_color):
     pygame.draw.circle(surface, WHEEL_COLOR, (int(x + body_w * 0.78), int(y + 22 * DIAGRAM_SCALE * scale)), wheel_d // 2)
 
 
-def draw_button(surface, rect, font, text, mouse_pos):
+def draw_button(surface, rect, font, text, mouse_pos, base_color=BUTTON_BLUE, hover_color=BUTTON_BLUE_HOVER):
     is_hovered = rect.collidepoint(mouse_pos)
-    color = BUTTON_BLUE_HOVER if is_hovered else BUTTON_BLUE
+    color = hover_color if is_hovered else base_color
     pygame.draw.rect(surface, color, rect, border_radius=8)
-    pygame.draw.rect(surface, ACCENT_BLUE, rect, width=2, border_radius=8)
+    pygame.draw.rect(surface, ACCENT_BLUE if base_color == BUTTON_BLUE else PANEL_BORDER, rect, width=2, border_radius=8)
     draw_text(surface, text, font, BUTTON_TEXT, rect.centerx, rect.centery, center=True)
 
 
-def draw_split_connector(surface, branch_name, color):
-    points = get_split_path_points(branch_name)
+def draw_connector(surface, points, color):
     pygame.draw.lines(surface, color, False, [(int(x), int(y)) for x, y in points], 3)
 
 
-def draw_merge_connector(surface, branch_name, color):
-    points = get_merge_path_points(branch_name)
-    pygame.draw.lines(surface, color, False, [(int(x), int(y)) for x, y in points], 3)
-
-
-def draw_input_main_line(surface, label_font):
+def draw_input_main_line(surface, label_font, show_labels=True):
     first_rect = main_pitch_rect(1)
     last_rect = main_pitch_rect(NUM_PITCHES_MAIN)
 
-    label_rect = pygame.Rect(
-        first_rect.x,
-        first_rect.y - MAIN_LABEL_OFFSET_Y,
-        last_rect.right - first_rect.x,
-        LABEL_BLOCK_HEIGHT,
-    )
+    label_rect = pygame.Rect(first_rect.x, first_rect.y - MAIN_LABEL_OFFSET_Y, last_rect.right - first_rect.x, LABEL_BLOCK_HEIGHT)
     pygame.draw.rect(surface, ACCENT_GREEN, label_rect, border_radius=4)
-    draw_text(surface, "Input Main Line", label_font, (255, 255, 255), label_rect.centerx, label_rect.centery, center=True)
+    draw_text(surface, "INPUT MAIN", label_font, (255, 255, 255), label_rect.centerx, label_rect.centery, center=True)
 
     rail_y = first_rect.y + PITCH_HEIGHT / 2 - 5
     rail_rect = pygame.Rect(first_rect.x, int(rail_y), last_rect.right - first_rect.x, 10)
     pygame.draw.rect(surface, RAIL_COLOR, rail_rect, border_radius=3)
 
     for i in range(1, NUM_PITCHES_MAIN + 1):
-        draw_pitch(surface, label_font, i, main_pitch_rect(i), "P")
+        draw_pitch(surface, label_font, i, main_pitch_rect(i), "P", show_labels=show_labels)
 
 
-def draw_branch_line(surface, label_font, branch_name, label, prefix):
+def draw_branch_line(surface, label_font, branch_name, label, prefix, show_labels=True):
     last_pitch = NUM_PITCHES_BLUE if branch_name == "blue_branch" else NUM_PITCHES_YELLOW
     rect1 = branch_pitch_rect(branch_name, 1)
     rect_last = branch_pitch_rect(branch_name, last_pitch)
 
-    label_rect = pygame.Rect(
-        rect1.x,
-        rect1.y - BRANCH_LABEL_OFFSET_Y,
-        rect_last.right - rect1.x,
-        LABEL_BLOCK_HEIGHT,
-    )
+    label_rect = pygame.Rect(rect1.x, rect1.y - BRANCH_LABEL_OFFSET_Y, rect_last.right - rect1.x, LABEL_BLOCK_HEIGHT)
     pygame.draw.rect(surface, ACCENT_GREEN, label_rect, border_radius=4)
     draw_text(surface, label, label_font, (255, 255, 255), label_rect.centerx, label_rect.centery, center=True)
 
@@ -475,31 +471,26 @@ def draw_branch_line(surface, label_font, branch_name, label, prefix):
     pygame.draw.rect(surface, RAIL_COLOR, rail_rect, border_radius=3)
 
     for i in range(1, last_pitch + 1):
-        draw_pitch(surface, label_font, i, branch_pitch_rect(branch_name, i), prefix)
+        draw_pitch(surface, label_font, i, branch_pitch_rect(branch_name, i), prefix, show_labels=show_labels)
 
 
-def draw_output_main_line(surface, label_font):
+def draw_output_main_line(surface, label_font, show_labels=True):
     first_rect = output_main_pitch_rect(1)
     last_rect = output_main_pitch_rect(NUM_PITCHES_OUT)
 
-    label_rect = pygame.Rect(
-        first_rect.x,
-        first_rect.y - OUT_LABEL_OFFSET_Y,
-        last_rect.right - first_rect.x,
-        LABEL_BLOCK_HEIGHT,
-    )
+    label_rect = pygame.Rect(first_rect.x, first_rect.y - OUT_LABEL_OFFSET_Y, last_rect.right - first_rect.x, LABEL_BLOCK_HEIGHT)
     pygame.draw.rect(surface, ACCENT_GREEN, label_rect, border_radius=4)
-    draw_text(surface, "Output Main Line", label_font, (255, 255, 255), label_rect.centerx, label_rect.centery, center=True)
+    draw_text(surface, "OUTPUT MAIN", label_font, (255, 255, 255), label_rect.centerx, label_rect.centery, center=True)
 
     rail_y = first_rect.y + PITCH_HEIGHT / 2 - 5
     rail_rect = pygame.Rect(first_rect.x, int(rail_y), last_rect.right - first_rect.x, 10)
     pygame.draw.rect(surface, RAIL_COLOR, rail_rect, border_radius=3)
 
     for i in range(1, NUM_PITCHES_OUT + 1):
-        draw_pitch(surface, label_font, i, output_main_pitch_rect(i), "O")
+        draw_pitch(surface, label_font, i, output_main_pitch_rect(i), "O", show_labels=show_labels)
 
 
-def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor):
+def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels):
     _, subtitle_font, _, _, button_font = fonts
     mouse_pos = pygame.mouse.get_pos()
 
@@ -507,21 +498,58 @@ def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_spee
     pygame.draw.rect(surface, PANEL_BG, panel_rect, border_radius=12)
     pygame.draw.rect(surface, PANEL_BORDER, panel_rect, width=2, border_radius=12)
 
-    draw_text(surface, "Blue Speed", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 24, CONTROL_PANEL_Y + 14)
-    draw_text(surface, f"{blue_speed_factor:.2f}x", subtitle_font, TEXT_COLOR, CONTROL_PANEL_X + 24, CONTROL_PANEL_Y + 46)
+    draw_text(surface, "Blue Speed", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 18, CONTROL_PANEL_Y + 12)
+    draw_text(surface, f"{blue_speed_factor:.2f}x", subtitle_font, TEXT_COLOR, CONTROL_PANEL_X + 20, CONTROL_PANEL_Y + 44)
     draw_button(surface, buttons["blue_minus"], button_font, "-", mouse_pos)
     draw_button(surface, buttons["blue_plus"], button_font, "+", mouse_pos)
 
-    draw_text(surface, "Yellow Speed", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 250, CONTROL_PANEL_Y + 14)
-    draw_text(surface, f"{yellow_speed_factor:.2f}x", subtitle_font, TEXT_COLOR, CONTROL_PANEL_X + 250, CONTROL_PANEL_Y + 46)
+    draw_text(surface, "Yellow Speed", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 226, CONTROL_PANEL_Y + 12)
+    draw_text(surface, f"{yellow_speed_factor:.2f}x", subtitle_font, TEXT_COLOR, CONTROL_PANEL_X + 228, CONTROL_PANEL_Y + 44)
     draw_button(surface, buttons["yellow_minus"], button_font, "-", mouse_pos)
     draw_button(surface, buttons["yellow_plus"], button_font, "+", mouse_pos)
 
-    draw_text(surface, "System", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 500, CONTROL_PANEL_Y + 14)
-    draw_button(surface, buttons["reset"], button_font, "Reset", mouse_pos)
+    draw_text(surface, "Playback", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 450, CONTROL_PANEL_Y + 12)
+    draw_button(surface, buttons["play_pause"], button_font, "Play" if paused else "Pause", mouse_pos, base_color=BUTTON_GREEN, hover_color=BUTTON_GREEN_HOVER)
+    draw_button(surface, buttons["step"], button_font, "Step", mouse_pos, base_color=BUTTON_ORANGE, hover_color=BUTTON_ORANGE_HOVER)
+    draw_button(surface, buttons["reset"], button_font, "Reset", mouse_pos, base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
+
+    draw_text(surface, "Presets", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 790, CONTROL_PANEL_Y + 12)
+    draw_button(surface, buttons["preset_balanced"], button_font, "Balanced", mouse_pos)
+    draw_button(surface, buttons["preset_blue"], button_font, "Blue Faster", mouse_pos)
+    draw_button(surface, buttons["preset_yellow"], button_font, "Yellow Faster", mouse_pos)
+
+    draw_text(surface, f"Pitch Labels: {'On' if show_labels else 'Off'}", subtitle_font, SUBTLE_TEXT, CONTROL_PANEL_X + 990, CONTROL_PANEL_Y + 50)
+    draw_button(surface, buttons["toggle_labels"], button_font, "Labels", mouse_pos, base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
 
 
-def draw_scene(surface, fonts, vehicles, takt_display, buttons, blue_speed_factor, yellow_speed_factor):
+def draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor):
+    _, subtitle_font, label_font, small_font, _ = fonts
+    box = pygame.Rect(1260, 24, 300, 190)
+    pygame.draw.rect(surface, LEGEND_BG, box, border_radius=12)
+    pygame.draw.rect(surface, PANEL_BORDER, box, width=2, border_radius=12)
+
+    draw_text(surface, "Legend", label_font, TITLE_COLOR, box.x + 16, box.y + 12)
+
+    pygame.draw.circle(surface, VEHICLE_BLUE, (box.x + 28, box.y + 52), 10)
+    draw_text(surface, "Blue vehicle -> blue branch", small_font, TEXT_COLOR, box.x + 46, box.y + 43)
+
+    pygame.draw.circle(surface, VEHICLE_YELLOW, (box.x + 28, box.y + 86), 10)
+    draw_text(surface, "Yellow vehicle -> yellow branch", small_font, TEXT_COLOR, box.x + 46, box.y + 77)
+
+    pygame.draw.line(surface, SPLIT_LINE_BLUE, (box.x + 16, box.y + 122), (box.x + 40, box.y + 122), 4)
+    draw_text(surface, "Blue split / merge path", small_font, TEXT_COLOR, box.x + 46, box.y + 113)
+
+    pygame.draw.line(surface, SPLIT_LINE_YELLOW, (box.x + 16, box.y + 152), (box.x + 40, box.y + 152), 4)
+    draw_text(surface, "Yellow split / merge path", small_font, TEXT_COLOR, box.x + 46, box.y + 143)
+
+    status_text = "Paused" if paused else "Running"
+    draw_text(surface, f"Status: {status_text}", small_font, TITLE_COLOR, box.x + 170, box.y + 16)
+    draw_text(surface, f"Blue: {blue_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 170, box.y + 44)
+    draw_text(surface, f"Yellow: {yellow_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 170, box.y + 68)
+    draw_text(surface, "Step advances one takt", small_font, SUBTLE_TEXT, box.x + 170, box.y + 104)
+
+
+def draw_scene(surface, fonts, vehicles, takt_display, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels):
     surface.fill(BG_COLOR)
 
     title_font, subtitle_font, label_font, _, _ = fonts
@@ -529,18 +557,20 @@ def draw_scene(surface, fonts, vehicles, takt_display, buttons, blue_speed_facto
     draw_text(surface, "Main Line Splits Into Blue and Yellow Branches, Then Merges Back", title_font, TITLE_COLOR, TITLE_X, TITLE_Y)
     draw_text(surface, f"Takt: {takt_display}", subtitle_font, TEXT_COLOR, TAKT_X, TAKT_Y)
     draw_text(surface, f"Version: {version.get_version()}", subtitle_font, TEXT_COLOR, VERSION_X, VERSION_Y)
+    draw_text(surface, f"Status: {'Paused' if paused else 'Running'}", subtitle_font, TEXT_COLOR, STATUS_X, STATUS_Y)
 
-    draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor)
+    draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels)
+    draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor)
 
-    draw_input_main_line(surface, label_font)
-    draw_branch_line(surface, label_font, "blue_branch", "Blue Branch Line", "B")
-    draw_branch_line(surface, label_font, "yellow_branch", "Yellow Branch Line", "Y")
-    draw_output_main_line(surface, label_font)
+    draw_input_main_line(surface, label_font, show_labels=show_labels)
+    draw_branch_line(surface, label_font, "blue_branch", "BLUE BRANCH", "B", show_labels=show_labels)
+    draw_branch_line(surface, label_font, "yellow_branch", "YELLOW BRANCH", "Y", show_labels=show_labels)
+    draw_output_main_line(surface, label_font, show_labels=show_labels)
 
-    draw_split_connector(surface, "blue_branch", SPLIT_LINE_BLUE)
-    draw_split_connector(surface, "yellow_branch", SPLIT_LINE_YELLOW)
-    draw_merge_connector(surface, "blue_branch", SPLIT_LINE_BLUE)
-    draw_merge_connector(surface, "yellow_branch", SPLIT_LINE_YELLOW)
+    draw_connector(surface, get_split_path_points("blue_branch"), SPLIT_LINE_BLUE)
+    draw_connector(surface, get_split_path_points("yellow_branch"), SPLIT_LINE_YELLOW)
+    draw_connector(surface, get_merge_path_points("blue_branch"), SPLIT_LINE_BLUE)
+    draw_connector(surface, get_merge_path_points("yellow_branch"), SPLIT_LINE_YELLOW)
 
     for vehicle in vehicles:
         if vehicle.route == "main" and vehicle.main_pitch_float is not None:
@@ -723,6 +753,62 @@ def reset_simulation():
     return vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state
 
 
+def apply_preset(preset_name):
+    return PRESETS[preset_name]
+
+
+def simulate_increment(vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state, blue_branch_speed_factor, yellow_branch_speed_factor, dt):
+    elapsed_since_takt += dt
+    delta_pitch_main = dt / TAKT_TIME_MAIN
+
+    main_vehicles = [v for v in vehicles if v.route == "main" and v.main_pitch_float is not None]
+    update_main_line(main_vehicles, delta_pitch_main)
+
+    try_split_branch(vehicles, color_check=lambda v: v.is_blue(), target_route="blue_branch", min_spacing=BLUE_BRANCH_MIN_SPACING)
+    try_split_branch(vehicles, color_check=lambda v: v.is_yellow(), target_route="yellow_branch", min_spacing=YELLOW_BRANCH_MIN_SPACING)
+
+    update_splitting_vehicles(vehicles, dt)
+
+    blue_branch_vehicles = [v for v in vehicles if v.route == "blue_branch" and v.branch_pitch_float is not None]
+    yellow_branch_vehicles = [v for v in vehicles if v.route == "yellow_branch" and v.branch_pitch_float is not None]
+
+    update_branch_line(blue_branch_vehicles, speed_factor=blue_branch_speed_factor, min_spacing=BLUE_BRANCH_MIN_SPACING, delta_pitch_main=delta_pitch_main)
+    update_branch_line(yellow_branch_vehicles, speed_factor=yellow_branch_speed_factor, min_spacing=YELLOW_BRANCH_MIN_SPACING, delta_pitch_main=delta_pitch_main)
+
+    try_merge_with_fairness(vehicles, merge_state)
+    update_merging_vehicles(vehicles, dt)
+
+    out_main_vehicles = [v for v in vehicles if v.route == "out_main" and v.out_pitch_float is not None]
+    update_output_main_line(out_main_vehicles, delta_pitch_main)
+
+    while elapsed_since_takt >= TAKT_TIME_MAIN:
+        elapsed_since_takt -= TAKT_TIME_MAIN
+        current_takt += 1
+        if next_vehicle_id <= MAX_VEHICLES:
+            vehicles.append(Vehicle(next_vehicle_id))
+            next_vehicle_id += 1
+
+    vehicles = [v for v in vehicles if v.is_on_screen()]
+    return vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state
+
+
+def step_one_takt(vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state, blue_branch_speed_factor, yellow_branch_speed_factor):
+    substeps = max(1, int(FPS * TAKT_TIME_MAIN))
+    dt = TAKT_TIME_MAIN / substeps
+    for _ in range(substeps):
+        vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = simulate_increment(
+            vehicles,
+            next_vehicle_id,
+            elapsed_since_takt,
+            current_takt,
+            merge_state,
+            blue_branch_speed_factor,
+            yellow_branch_speed_factor,
+            dt,
+        )
+    return vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state
+
+
 # ----------------------------
 # Main loop
 # ----------------------------
@@ -736,112 +822,90 @@ def main():
     subtitle_font = pygame.font.SysFont("arial", 22)
     label_font = pygame.font.SysFont("arial", 20, bold=True)
     small_font = pygame.font.SysFont("arial", 16)
-    button_font = pygame.font.SysFont("arial", 22, bold=True)
-
+    button_font = pygame.font.SysFont("arial", 20, bold=True)
     fonts = (title_font, subtitle_font, label_font, small_font, button_font)
 
     buttons = {
-        "blue_minus": pygame.Rect(CONTROL_PANEL_X + 120, CONTROL_PANEL_Y + 36, 44, 34),
-        "blue_plus": pygame.Rect(CONTROL_PANEL_X + 172, CONTROL_PANEL_Y + 36, 44, 34),
-        "yellow_minus": pygame.Rect(CONTROL_PANEL_X + 380, CONTROL_PANEL_Y + 36, 44, 34),
-        "yellow_plus": pygame.Rect(CONTROL_PANEL_X + 432, CONTROL_PANEL_Y + 36, 44, 34),
-        "reset": pygame.Rect(CONTROL_PANEL_X + 580, CONTROL_PANEL_Y + 34, 120, 38),
+        "blue_minus": pygame.Rect(CONTROL_PANEL_X + 100, CONTROL_PANEL_Y + 34, 42, 34),
+        "blue_plus": pygame.Rect(CONTROL_PANEL_X + 148, CONTROL_PANEL_Y + 34, 42, 34),
+        "yellow_minus": pygame.Rect(CONTROL_PANEL_X + 312, CONTROL_PANEL_Y + 34, 42, 34),
+        "yellow_plus": pygame.Rect(CONTROL_PANEL_X + 360, CONTROL_PANEL_Y + 34, 42, 34),
+        "play_pause": pygame.Rect(CONTROL_PANEL_X + 440, CONTROL_PANEL_Y + 34, 90, 38),
+        "step": pygame.Rect(CONTROL_PANEL_X + 540, CONTROL_PANEL_Y + 34, 84, 38),
+        "reset": pygame.Rect(CONTROL_PANEL_X + 634, CONTROL_PANEL_Y + 34, 84, 38),
+        "preset_balanced": pygame.Rect(CONTROL_PANEL_X + 768, CONTROL_PANEL_Y + 34, 110, 38),
+        "preset_blue": pygame.Rect(CONTROL_PANEL_X + 888, CONTROL_PANEL_Y + 34, 132, 38),
+        "preset_yellow": pygame.Rect(CONTROL_PANEL_X + 1030, CONTROL_PANEL_Y + 34, 142, 38),
+        "toggle_labels": pygame.Rect(CONTROL_PANEL_X + 1050, CONTROL_PANEL_Y + 68, 122, 28),
     }
 
     blue_branch_speed_factor = INITIAL_BLUE_BRANCH_SPEED_FACTOR
     yellow_branch_speed_factor = INITIAL_YELLOW_BRANCH_SPEED_FACTOR
+    paused = False
+    show_labels = True
 
     vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = reset_simulation()
 
     running = True
     while running:
-        dt = clock.tick(FPS) / 1000.0
-        elapsed_since_takt += dt
+        frame_dt = clock.tick(FPS) / 1000.0
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    paused = not paused
+                elif event.key == pygame.K_r:
+                    vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = reset_simulation()
+                elif event.key == pygame.K_l:
+                    show_labels = not show_labels
+                elif event.key == pygame.K_RIGHT and paused:
+                    vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = step_one_takt(
+                        vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state, blue_branch_speed_factor, yellow_branch_speed_factor
+                    )
+
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if buttons["reset"].collidepoint(event.pos):
+                if buttons["play_pause"].collidepoint(event.pos):
+                    paused = not paused
+                elif buttons["step"].collidepoint(event.pos):
+                    vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = step_one_takt(
+                        vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state, blue_branch_speed_factor, yellow_branch_speed_factor
+                    )
+                elif buttons["reset"].collidepoint(event.pos):
                     vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = reset_simulation()
                     blue_branch_speed_factor = INITIAL_BLUE_BRANCH_SPEED_FACTOR
                     yellow_branch_speed_factor = INITIAL_YELLOW_BRANCH_SPEED_FACTOR
+                    paused = False
                 elif buttons["blue_minus"].collidepoint(event.pos):
-                    blue_branch_speed_factor = clamp(
-                        blue_branch_speed_factor - SPEED_STEP,
-                        MIN_SPEED_FACTOR,
-                        MAX_SPEED_FACTOR,
-                    )
+                    blue_branch_speed_factor = clamp(blue_branch_speed_factor - SPEED_STEP, MIN_SPEED_FACTOR, MAX_SPEED_FACTOR)
                 elif buttons["blue_plus"].collidepoint(event.pos):
-                    blue_branch_speed_factor = clamp(
-                        blue_branch_speed_factor + SPEED_STEP,
-                        MIN_SPEED_FACTOR,
-                        MAX_SPEED_FACTOR,
-                    )
+                    blue_branch_speed_factor = clamp(blue_branch_speed_factor + SPEED_STEP, MIN_SPEED_FACTOR, MAX_SPEED_FACTOR)
                 elif buttons["yellow_minus"].collidepoint(event.pos):
-                    yellow_branch_speed_factor = clamp(
-                        yellow_branch_speed_factor - SPEED_STEP,
-                        MIN_SPEED_FACTOR,
-                        MAX_SPEED_FACTOR,
-                    )
+                    yellow_branch_speed_factor = clamp(yellow_branch_speed_factor - SPEED_STEP, MIN_SPEED_FACTOR, MAX_SPEED_FACTOR)
                 elif buttons["yellow_plus"].collidepoint(event.pos):
-                    yellow_branch_speed_factor = clamp(
-                        yellow_branch_speed_factor + SPEED_STEP,
-                        MIN_SPEED_FACTOR,
-                        MAX_SPEED_FACTOR,
-                    )
+                    yellow_branch_speed_factor = clamp(yellow_branch_speed_factor + SPEED_STEP, MIN_SPEED_FACTOR, MAX_SPEED_FACTOR)
+                elif buttons["preset_balanced"].collidepoint(event.pos):
+                    blue_branch_speed_factor, yellow_branch_speed_factor = apply_preset("balanced")
+                elif buttons["preset_blue"].collidepoint(event.pos):
+                    blue_branch_speed_factor, yellow_branch_speed_factor = apply_preset("blue_faster")
+                elif buttons["preset_yellow"].collidepoint(event.pos):
+                    blue_branch_speed_factor, yellow_branch_speed_factor = apply_preset("yellow_faster")
+                elif buttons["toggle_labels"].collidepoint(event.pos):
+                    show_labels = not show_labels
 
-        delta_pitch_main = dt / TAKT_TIME_MAIN
-
-        main_vehicles = [v for v in vehicles if v.route == "main" and v.main_pitch_float is not None]
-        update_main_line(main_vehicles, delta_pitch_main)
-
-        try_split_branch(
-            vehicles,
-            color_check=lambda v: v.is_blue(),
-            target_route="blue_branch",
-            min_spacing=BLUE_BRANCH_MIN_SPACING,
-        )
-        try_split_branch(
-            vehicles,
-            color_check=lambda v: v.is_yellow(),
-            target_route="yellow_branch",
-            min_spacing=YELLOW_BRANCH_MIN_SPACING,
-        )
-
-        update_splitting_vehicles(vehicles, dt)
-
-        blue_branch_vehicles = [v for v in vehicles if v.route == "blue_branch" and v.branch_pitch_float is not None]
-        yellow_branch_vehicles = [v for v in vehicles if v.route == "yellow_branch" and v.branch_pitch_float is not None]
-
-        update_branch_line(
-            blue_branch_vehicles,
-            speed_factor=blue_branch_speed_factor,
-            min_spacing=BLUE_BRANCH_MIN_SPACING,
-            delta_pitch_main=delta_pitch_main,
-        )
-        update_branch_line(
-            yellow_branch_vehicles,
-            speed_factor=yellow_branch_speed_factor,
-            min_spacing=YELLOW_BRANCH_MIN_SPACING,
-            delta_pitch_main=delta_pitch_main,
-        )
-
-        try_merge_with_fairness(vehicles, merge_state)
-        update_merging_vehicles(vehicles, dt)
-
-        out_main_vehicles = [v for v in vehicles if v.route == "out_main" and v.out_pitch_float is not None]
-        update_output_main_line(out_main_vehicles, delta_pitch_main)
-
-        if elapsed_since_takt >= TAKT_TIME_MAIN:
-            elapsed_since_takt -= TAKT_TIME_MAIN
-            current_takt += 1
-            if next_vehicle_id <= MAX_VEHICLES:
-                vehicles.append(Vehicle(next_vehicle_id))
-                next_vehicle_id += 1
-
-        vehicles = [v for v in vehicles if v.is_on_screen()]
+        if not paused:
+            vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = simulate_increment(
+                vehicles,
+                next_vehicle_id,
+                elapsed_since_takt,
+                current_takt,
+                merge_state,
+                blue_branch_speed_factor,
+                yellow_branch_speed_factor,
+                frame_dt,
+            )
 
         draw_scene(
             screen,
@@ -851,6 +915,8 @@ def main():
             buttons,
             blue_branch_speed_factor,
             yellow_branch_speed_factor,
+            paused,
+            show_labels,
         )
         pygame.display.flip()
 
