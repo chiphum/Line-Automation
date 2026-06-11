@@ -461,7 +461,7 @@ def main():
         "blue_plus": pygame.Rect(CONTROL_PANEL_X + 172, CONTROL_PANEL_Y + 36, 44, 34),
         "yellow_minus": pygame.Rect(CONTROL_PANEL_X + 380, CONTROL_PANEL_Y + 36, 44, 34),
         "yellow_plus": pygame.Rect(CONTROL_PANEL_X + 432, CONTROL_PANEL_Y + 36, 44, 34),
-        "reset": pygame.Rect(CONTROL_PANEL_X + 560, CONTROL_PANEL_Y + 34, 100, 38),
+        "reset": pygame.Rect(CONTROL_PANEL_X + 580, CONTROL_PANEL_Y + 34, 100, 38),
     }
 
     blue_branch_speed_factor = INITIAL_BLUE_BRANCH_SPEED_FACTOR
@@ -549,6 +549,8 @@ def main():
 
     pygame.quit()
     sys.exit()
+
+# Entry point
 
 if __name__ == "__main__":
     main()
