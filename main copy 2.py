@@ -102,9 +102,6 @@ MAX_SPEED_FACTOR = 2.00
 SPLIT_TRAVEL_TIME = 0.99
 MERGE_TRAVEL_TIME = 0.99
 
-AUTO_DEMO_INTERVAL = 8.0
-AUTO_DEMO_SEQUENCE = ["balanced", "blue_faster", "yellow_faster"]
-
 PRESETS = {
     "balanced": (0.50, 0.50),
     "blue_faster": (0.90, 0.30),
@@ -511,7 +508,7 @@ def draw_output_main_line(surface, label_font, show_labels=True):
         draw_pitch(surface, label_font, i, output_main_pitch_rect(i), "O", show_labels=show_labels)
 
 
-def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels, fullscreen, presentation_mode, auto_demo_mode):
+def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels, fullscreen, presentation_mode):
     _, subtitle_font, _, _, button_font = fonts
     mouse_pos = pygame.mouse.get_pos()
 
@@ -539,21 +536,15 @@ def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_spee
     draw_button(surface, buttons["preset_blue"], button_font, "Blue Faster", mouse_pos)
     draw_button(surface, buttons["preset_yellow"], button_font, "Yellow Faster", mouse_pos)
 
-    draw_text(surface, f"Labels: {'On' if show_labels else 'Off'}", subtitle_font, SUBTLE_TEXT, CONTROL_PANEL_X + 1010, CONTROL_PANEL_Y + 14)
-    draw_text(surface, f"Auto Demo: {'On' if auto_demo_mode else 'Off'}", subtitle_font, SUBTLE_TEXT, CONTROL_PANEL_X + 1010, CONTROL_PANEL_Y + 52)
+    draw_text(surface, f"Pitch Labels: {'On' if show_labels else 'Off'}", subtitle_font, SUBTLE_TEXT, CONTROL_PANEL_X + 1010, CONTROL_PANEL_Y + 14)
     draw_button(surface, buttons["toggle_labels"], button_font, "Labels", mouse_pos, base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
     draw_button(surface, buttons["toggle_fullscreen"], button_font, "Windowed" if fullscreen else "Fullscreen", mouse_pos, base_color=BUTTON_BLUE, hover_color=BUTTON_BLUE_HOVER)
     draw_button(surface, buttons["toggle_presentation"], button_font, "Present On" if presentation_mode else "Present Off", mouse_pos, base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
-    draw_button(surface, buttons["toggle_auto_demo"], button_font, "Auto Demo", mouse_pos, base_color=BUTTON_ORANGE, hover_color=BUTTON_ORANGE_HOVER)
 
 
-def draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor, fullscreen, presentation_mode, auto_demo_mode):
+def draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor, fullscreen, presentation_mode):
     _, _, label_font, small_font, _ = fonts
-    box_w = 320
-    box_h = 206
-    box_x = SCREEN_WIDTH - box_w - 36
-    box_y = SCREEN_HEIGHT - box_h - 54
-    box = pygame.Rect(box_x, box_y, box_w, box_h)
+    box = pygame.Rect(1260, 24, 300, 212)
     pygame.draw.rect(surface, LEGEND_BG, box, border_radius=12)
     pygame.draw.rect(surface, PANEL_BORDER, box, width=2, border_radius=12)
 
@@ -562,50 +553,49 @@ def draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor, 
     pygame.draw.circle(surface, VEHICLE_BLUE, (box.x + 28, box.y + 52), 10)
     draw_text(surface, "Blue vehicle → blue branch", small_font, TEXT_COLOR, box.x + 46, box.y + 43)
 
-    pygame.draw.circle(surface, VEHICLE_YELLOW, (box.x + 28, box.y + 82), 10)
-    draw_text(surface, "Yellow vehicle → yellow branch", small_font, TEXT_COLOR, box.x + 46, box.y + 73)
+    pygame.draw.circle(surface, VEHICLE_YELLOW, (box.x + 28, box.y + 86), 10)
+    draw_text(surface, "Yellow vehicle → yellow branch", small_font, TEXT_COLOR, box.x + 46, box.y + 77)
 
-    pygame.draw.line(surface, SPLIT_LINE_BLUE, (box.x + 16, box.y + 112), (box.x + 40, box.y + 112), 4)
-    draw_text(surface, "Blue split / merge path", small_font, TEXT_COLOR, box.x + 46, box.y + 103)
+    pygame.draw.line(surface, SPLIT_LINE_BLUE, (box.x + 16, box.y + 122), (box.x + 40, box.y + 122), 4)
+    draw_text(surface, "Blue split / merge path", small_font, TEXT_COLOR, box.x + 46, box.y + 113)
 
-    pygame.draw.line(surface, SPLIT_LINE_YELLOW, (box.x + 16, box.y + 142), (box.x + 40, box.y + 142), 4)
-    draw_text(surface, "Yellow split / merge path", small_font, TEXT_COLOR, box.x + 46, box.y + 133)
+    pygame.draw.line(surface, SPLIT_LINE_YELLOW, (box.x + 16, box.y + 152), (box.x + 40, box.y + 152), 4)
+    draw_text(surface, "Yellow split / merge path", small_font, TEXT_COLOR, box.x + 46, box.y + 143)
 
-    draw_text(surface, f"Status: {'Paused' if paused else 'Running'}", small_font, TITLE_COLOR, box.x + 178, box.y + 14)
-    draw_text(surface, f"Blue: {blue_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 178, box.y + 40)
-    draw_text(surface, f"Yellow: {yellow_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 178, box.y + 62)
-    draw_text(surface, f"Auto Demo: {'On' if auto_demo_mode else 'Off'}", small_font, SUBTLE_TEXT, box.x + 178, box.y + 84)
-    draw_text(surface, f"Fullscreen: {'On' if fullscreen else 'Off'}", small_font, SUBTLE_TEXT, box.x + 178, box.y + 106)
-    draw_text(surface, f"Present: {'On' if presentation_mode else 'Off'}", small_font, SUBTLE_TEXT, box.x + 178, box.y + 128)
-    draw_text(surface, "Step advances one takt", small_font, SUBTLE_TEXT, box.x + 178, box.y + 150)
+    status_text = "Paused" if paused else "Running"
+    draw_text(surface, f"Status: {status_text}", small_font, TITLE_COLOR, box.x + 170, box.y + 16)
+    draw_text(surface, f"Blue: {blue_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 170, box.y + 44)
+    draw_text(surface, f"Yellow: {yellow_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 170, box.y + 68)
+    draw_text(surface, f"Fullscreen: {'On' if fullscreen else 'Off'}", small_font, SUBTLE_TEXT, box.x + 170, box.y + 92)
+    draw_text(surface, f"Present: {'On' if presentation_mode else 'Off'}", small_font, SUBTLE_TEXT, box.x + 170, box.y + 116)
+    draw_text(surface, "Step advances one takt", small_font, SUBTLE_TEXT, box.x + 170, box.y + 144)
 
 
 def draw_shortcuts_bar(surface, small_font, presentation_mode):
-    text = "Space Pause/Play   Right Step   F Fullscreen   P Presentation   A Auto Demo   L Labels   R Reset"
+    text = "Space Pause/Play   Right Step   F Fullscreen   P Presentation   L Labels   R Reset"
     if presentation_mode:
-        overlay = pygame.Surface((1130, 34), pygame.SRCALPHA)
+        overlay = pygame.Surface((980, 34), pygame.SRCALPHA)
         overlay.fill(OVERLAY_BG)
         surface.blit(overlay, (40, SCREEN_HEIGHT - 52))
-        pygame.draw.rect(surface, PANEL_BORDER, pygame.Rect(40, SCREEN_HEIGHT - 52, 1130, 34), width=1, border_radius=8)
+        pygame.draw.rect(surface, PANEL_BORDER, pygame.Rect(40, SCREEN_HEIGHT - 52, 980, 34), width=1, border_radius=8)
         draw_text(surface, text, small_font, TITLE_COLOR, 54, SCREEN_HEIGHT - 45)
     else:
         draw_text(surface, text, small_font, SUBTLE_TEXT, 40, SCREEN_HEIGHT - 32)
 
 
-def draw_presentation_banner(surface, fonts, paused, blue_speed_factor, yellow_speed_factor, auto_demo_mode):
+def draw_presentation_banner(surface, fonts, paused, blue_speed_factor, yellow_speed_factor):
     _, subtitle_font, _, small_font, _ = fonts
-    overlay = pygame.Surface((520, 96), pygame.SRCALPHA)
+    overlay = pygame.Surface((480, 90), pygame.SRCALPHA)
     overlay.fill(OVERLAY_BG)
-    surface.blit(overlay, (SCREEN_WIDTH - 560, 18))
-    box = pygame.Rect(SCREEN_WIDTH - 560, 18, 520, 96)
+    surface.blit(overlay, (SCREEN_WIDTH - 520, 18))
+    box = pygame.Rect(SCREEN_WIDTH - 520, 18, 480, 90)
     pygame.draw.rect(surface, PANEL_BORDER, box, width=1, border_radius=10)
     draw_text(surface, "Presentation Mode", subtitle_font, TITLE_COLOR, box.x + 16, box.y + 12)
-    draw_text(surface, f"Status: {'Paused' if paused else 'Running'}", small_font, SUBTLE_TEXT, box.x + 18, box.y + 50)
-    draw_text(surface, f"Blue {blue_speed_factor:.2f}x   Yellow {yellow_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 180, box.y + 50)
-    draw_text(surface, f"Auto Demo {'On' if auto_demo_mode else 'Off'}", small_font, SUBTLE_TEXT, box.x + 18, box.y + 72)
+    draw_text(surface, f"Status: {'Paused' if paused else 'Running'}", small_font, SUBTLE_TEXT, box.x + 18, box.y + 48)
+    draw_text(surface, f"Blue {blue_speed_factor:.2f}x   Yellow {yellow_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 180, box.y + 48)
 
 
-def draw_scene(surface, vehicles, takt_display, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels, fullscreen, presentation_mode, auto_demo_mode):
+def draw_scene(surface, vehicles, takt_display, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels, fullscreen, presentation_mode):
     surface.fill(BG_COLOR)
 
     fonts = create_fonts(presentation_mode=presentation_mode)
@@ -619,10 +609,10 @@ def draw_scene(surface, vehicles, takt_display, buttons, blue_speed_factor, yell
     draw_text(surface, f"Status: {'Paused' if paused else 'Running'}", subtitle_font, TEXT_COLOR, STATUS_X, STATUS_Y)
 
     if presentation_mode:
-        draw_presentation_banner(surface, fonts, paused, blue_speed_factor, yellow_speed_factor, auto_demo_mode)
+        draw_presentation_banner(surface, fonts, paused, blue_speed_factor, yellow_speed_factor)
     else:
-        draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels, fullscreen, presentation_mode, auto_demo_mode)
-        draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor, fullscreen, presentation_mode, auto_demo_mode)
+        draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels, fullscreen, presentation_mode)
+        draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor, fullscreen, presentation_mode)
 
     draw_input_main_line(surface, label_font, show_labels=effective_show_labels)
     draw_branch_line(surface, label_font, "blue_branch", "BLUE BRANCH", "B", show_labels=effective_show_labels)
@@ -882,16 +872,6 @@ def create_display(fullscreen=False):
     return screen
 
 
-def toggle_auto_demo(auto_demo_mode, blue_branch_speed_factor, yellow_branch_speed_factor):
-    if auto_demo_mode:
-        auto_demo_index = 0
-        preset_name = AUTO_DEMO_SEQUENCE[auto_demo_index]
-        blue_branch_speed_factor, yellow_branch_speed_factor = apply_preset(preset_name)
-        auto_demo_timer = 0.0
-        return True, auto_demo_index, auto_demo_timer, blue_branch_speed_factor, yellow_branch_speed_factor
-    return False, 0, 0.0, blue_branch_speed_factor, yellow_branch_speed_factor
-
-
 # ----------------------------
 # Main loop
 # ----------------------------
@@ -911,10 +891,9 @@ def main():
         "preset_balanced": pygame.Rect(CONTROL_PANEL_X + 768, CONTROL_PANEL_Y + 34, 110, 38),
         "preset_blue": pygame.Rect(CONTROL_PANEL_X + 888, CONTROL_PANEL_Y + 34, 132, 38),
         "preset_yellow": pygame.Rect(CONTROL_PANEL_X + 1030, CONTROL_PANEL_Y + 34, 142, 38),
-        "toggle_labels": pygame.Rect(CONTROL_PANEL_X + 1210, CONTROL_PANEL_Y + 14, 114, 34),
-        "toggle_fullscreen": pygame.Rect(CONTROL_PANEL_X + 1336, CONTROL_PANEL_Y + 14, 136, 34),
-        "toggle_presentation": pygame.Rect(CONTROL_PANEL_X + 1210, CONTROL_PANEL_Y + 56, 126, 34),
-        "toggle_auto_demo": pygame.Rect(CONTROL_PANEL_X + 1348, CONTROL_PANEL_Y + 56, 124, 34),
+        "toggle_labels": pygame.Rect(CONTROL_PANEL_X + 1210, CONTROL_PANEL_Y + 16, 114, 34),
+        "toggle_fullscreen": pygame.Rect(CONTROL_PANEL_X + 1336, CONTROL_PANEL_Y + 16, 136, 34),
+        "toggle_presentation": pygame.Rect(CONTROL_PANEL_X + 1210, CONTROL_PANEL_Y + 58, 262, 34),
     }
 
     blue_branch_speed_factor = INITIAL_BLUE_BRANCH_SPEED_FACTOR
@@ -923,9 +902,6 @@ def main():
     show_labels = True
     fullscreen = False
     presentation_mode = False
-    auto_demo_mode = False
-    auto_demo_index = 0
-    auto_demo_timer = 0.0
 
     vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = reset_simulation()
 
@@ -949,12 +925,6 @@ def main():
                     screen = create_display(fullscreen=fullscreen)
                 elif event.key == pygame.K_p:
                     presentation_mode = not presentation_mode
-                elif event.key == pygame.K_a:
-                    auto_demo_mode = not auto_demo_mode
-                    if auto_demo_mode:
-                        auto_demo_mode, auto_demo_index, auto_demo_timer, blue_branch_speed_factor, yellow_branch_speed_factor = toggle_auto_demo(
-                            auto_demo_mode, blue_branch_speed_factor, yellow_branch_speed_factor
-                        )
                 elif event.key == pygame.K_RIGHT and paused:
                     vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = step_one_takt(
                         vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state, blue_branch_speed_factor, yellow_branch_speed_factor
@@ -972,28 +942,20 @@ def main():
                     blue_branch_speed_factor = INITIAL_BLUE_BRANCH_SPEED_FACTOR
                     yellow_branch_speed_factor = INITIAL_YELLOW_BRANCH_SPEED_FACTOR
                     paused = False
-                    auto_demo_timer = 0.0
                 elif buttons["blue_minus"].collidepoint(event.pos):
                     blue_branch_speed_factor = clamp(blue_branch_speed_factor - SPEED_STEP, MIN_SPEED_FACTOR, MAX_SPEED_FACTOR)
-                    auto_demo_mode = False
                 elif buttons["blue_plus"].collidepoint(event.pos):
                     blue_branch_speed_factor = clamp(blue_branch_speed_factor + SPEED_STEP, MIN_SPEED_FACTOR, MAX_SPEED_FACTOR)
-                    auto_demo_mode = False
                 elif buttons["yellow_minus"].collidepoint(event.pos):
                     yellow_branch_speed_factor = clamp(yellow_branch_speed_factor - SPEED_STEP, MIN_SPEED_FACTOR, MAX_SPEED_FACTOR)
-                    auto_demo_mode = False
                 elif buttons["yellow_plus"].collidepoint(event.pos):
                     yellow_branch_speed_factor = clamp(yellow_branch_speed_factor + SPEED_STEP, MIN_SPEED_FACTOR, MAX_SPEED_FACTOR)
-                    auto_demo_mode = False
                 elif buttons["preset_balanced"].collidepoint(event.pos):
                     blue_branch_speed_factor, yellow_branch_speed_factor = apply_preset("balanced")
-                    auto_demo_mode = False
                 elif buttons["preset_blue"].collidepoint(event.pos):
                     blue_branch_speed_factor, yellow_branch_speed_factor = apply_preset("blue_faster")
-                    auto_demo_mode = False
                 elif buttons["preset_yellow"].collidepoint(event.pos):
                     blue_branch_speed_factor, yellow_branch_speed_factor = apply_preset("yellow_faster")
-                    auto_demo_mode = False
                 elif buttons["toggle_labels"].collidepoint(event.pos):
                     show_labels = not show_labels
                 elif buttons["toggle_fullscreen"].collidepoint(event.pos):
@@ -1001,20 +963,6 @@ def main():
                     screen = create_display(fullscreen=fullscreen)
                 elif buttons["toggle_presentation"].collidepoint(event.pos):
                     presentation_mode = not presentation_mode
-                elif buttons["toggle_auto_demo"].collidepoint(event.pos):
-                    auto_demo_mode = not auto_demo_mode
-                    if auto_demo_mode:
-                        auto_demo_mode, auto_demo_index, auto_demo_timer, blue_branch_speed_factor, yellow_branch_speed_factor = toggle_auto_demo(
-                            auto_demo_mode, blue_branch_speed_factor, yellow_branch_speed_factor
-                        )
-
-        if auto_demo_mode and not paused:
-            auto_demo_timer += frame_dt
-            if auto_demo_timer >= AUTO_DEMO_INTERVAL:
-                auto_demo_timer = 0.0
-                auto_demo_index = (auto_demo_index + 1) % len(AUTO_DEMO_SEQUENCE)
-                preset_name = AUTO_DEMO_SEQUENCE[auto_demo_index]
-                blue_branch_speed_factor, yellow_branch_speed_factor = apply_preset(preset_name)
 
         if not paused:
             vehicles, next_vehicle_id, elapsed_since_takt, current_takt, merge_state = simulate_increment(
@@ -1039,7 +987,6 @@ def main():
             show_labels,
             fullscreen,
             presentation_mode,
-            auto_demo_mode,
         )
         pygame.display.flip()
 
