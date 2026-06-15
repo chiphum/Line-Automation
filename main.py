@@ -89,10 +89,23 @@ DIAGRAM_RIGHT = SCREEN_WIDTH - 40
 BRANCH_START_OFFSET_X = int(24 * DIAGRAM_SCALE)
 OUT_START_OFFSET_X = 120
 
-BLUE_BRANCH_TOP = 260
-MAIN_TOP = 470
-YELLOW_BRANCH_TOP = 760
-OUT_MAIN_TOP = 470
+# BLUE_BRANCH_TOP = 260
+# MAIN_TOP = 470
+# YELLOW_BRANCH_TOP = 760
+# OUT_MAIN_TOP = 470
+
+# ----------------------------
+# Dynamic vertical layout (prevents overlap)
+# ----------------------------
+
+TOP_UI_BOTTOM = CONTROL_PANEL_Y + CONTROL_PANEL_H
+
+VERTICAL_SPACING = 70   # try 60–90 depending on preference
+
+BLUE_BRANCH_TOP = TOP_UI_BOTTOM + VERTICAL_SPACING
+MAIN_TOP = BLUE_BRANCH_TOP + 200
+YELLOW_BRANCH_TOP = MAIN_TOP + 280
+OUT_MAIN_TOP = MAIN_TOP
 
 PITCH_HEIGHT = max(28, int(88 * DIAGRAM_SCALE))
 MIN_PITCH_WIDTH = max(28, int(62 * DIAGRAM_SCALE))
@@ -533,6 +546,41 @@ def draw_output_main_line(surface, label_font, show_labels=True):
         draw_pitch(surface, label_font, i, output_main_pitch_rect(i), "O", show_labels=show_labels)
 
 
+# def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels, fullscreen, presentation_mode, auto_demo_mode):
+#     _, subtitle_font, _, _, button_font = fonts
+#     mouse_pos = pygame.mouse.get_pos()
+
+#     panel_rect = pygame.Rect(CONTROL_PANEL_X, CONTROL_PANEL_Y, CONTROL_PANEL_W, CONTROL_PANEL_H)
+#     pygame.draw.rect(surface, PANEL_BG, panel_rect, border_radius=12)
+#     pygame.draw.rect(surface, PANEL_BORDER, panel_rect, width=2, border_radius=12)
+
+#     draw_text(surface, "Blue Speed", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 18, CONTROL_PANEL_Y + 12)
+#     draw_text(surface, f"{blue_speed_factor:.2f}x", subtitle_font, TEXT_COLOR, CONTROL_PANEL_X + 20, CONTROL_PANEL_Y + 44)
+#     draw_button(surface, buttons["blue_minus"], button_font, "-", mouse_pos)
+#     draw_button(surface, buttons["blue_plus"], button_font, "+", mouse_pos)
+
+#     draw_text(surface, "Yellow Speed", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 226, CONTROL_PANEL_Y + 12)
+#     draw_text(surface, f"{yellow_speed_factor:.2f}x", subtitle_font, TEXT_COLOR, CONTROL_PANEL_X + 228, CONTROL_PANEL_Y + 44)
+#     draw_button(surface, buttons["yellow_minus"], button_font, "-", mouse_pos)
+#     draw_button(surface, buttons["yellow_plus"], button_font, "+", mouse_pos)
+
+#     draw_text(surface, "Playback", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 450, CONTROL_PANEL_Y + 12)
+#     draw_button(surface, buttons["play_pause"], button_font, "Play" if paused else "Pause", mouse_pos, base_color=BUTTON_GREEN, hover_color=BUTTON_GREEN_HOVER)
+#     draw_button(surface, buttons["step"], button_font, "Step", mouse_pos, base_color=BUTTON_ORANGE, hover_color=BUTTON_ORANGE_HOVER)
+#     draw_button(surface, buttons["reset"], button_font, "Reset", mouse_pos, base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
+
+#     draw_text(surface, "Presets", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 790, CONTROL_PANEL_Y + 12)
+#     draw_button(surface, buttons["preset_balanced"], button_font, "Balanced", mouse_pos)
+#     draw_button(surface, buttons["preset_blue"], button_font, "Blue Faster", mouse_pos)
+#     draw_button(surface, buttons["preset_yellow"], button_font, "Yellow Faster", mouse_pos)
+
+#     draw_text(surface, f"Labels: {'On' if show_labels else 'Off'}", subtitle_font, SUBTLE_TEXT, CONTROL_PANEL_X + 1010, CONTROL_PANEL_Y + 14)
+#     draw_text(surface, f"Auto Demo: {'On' if auto_demo_mode else 'Off'}", subtitle_font, SUBTLE_TEXT, CONTROL_PANEL_X + 1010, CONTROL_PANEL_Y + 52)
+#     draw_button(surface, buttons["toggle_labels"], button_font, "Labels", mouse_pos, base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
+#     draw_button(surface, buttons["toggle_fullscreen"], button_font, "Windowed" if fullscreen else "Fullscreen", mouse_pos, base_color=BUTTON_BLUE, hover_color=BUTTON_BLUE_HOVER)
+#     draw_button(surface, buttons["toggle_presentation"], button_font, "Present On" if presentation_mode else "Present Off", mouse_pos, base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
+#     draw_button(surface, buttons["toggle_auto_demo"], button_font, "Auto Demo", mouse_pos, base_color=BUTTON_ORANGE, hover_color=BUTTON_ORANGE_HOVER)
+
 def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_speed_factor, paused, show_labels, fullscreen, presentation_mode, auto_demo_mode):
     _, subtitle_font, _, _, button_font = fonts
     mouse_pos = pygame.mouse.get_pos()
@@ -541,6 +589,9 @@ def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_spee
     pygame.draw.rect(surface, PANEL_BG, panel_rect, border_radius=12)
     pygame.draw.rect(surface, PANEL_BORDER, panel_rect, width=2, border_radius=12)
 
+    # ---------------------------
+    # LEFT SIDE (Blue / Yellow)
+    # ---------------------------
     draw_text(surface, "Blue Speed", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 18, CONTROL_PANEL_Y + 12)
     draw_text(surface, f"{blue_speed_factor:.2f}x", subtitle_font, TEXT_COLOR, CONTROL_PANEL_X + 20, CONTROL_PANEL_Y + 44)
     draw_button(surface, buttons["blue_minus"], button_font, "-", mouse_pos)
@@ -551,55 +602,161 @@ def draw_header_controls(surface, fonts, buttons, blue_speed_factor, yellow_spee
     draw_button(surface, buttons["yellow_minus"], button_font, "-", mouse_pos)
     draw_button(surface, buttons["yellow_plus"], button_font, "+", mouse_pos)
 
+    # ---------------------------
+    # PLAYBACK
+    # ---------------------------
     draw_text(surface, "Playback", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 450, CONTROL_PANEL_Y + 12)
     draw_button(surface, buttons["play_pause"], button_font, "Play" if paused else "Pause", mouse_pos, base_color=BUTTON_GREEN, hover_color=BUTTON_GREEN_HOVER)
     draw_button(surface, buttons["step"], button_font, "Step", mouse_pos, base_color=BUTTON_ORANGE, hover_color=BUTTON_ORANGE_HOVER)
     draw_button(surface, buttons["reset"], button_font, "Reset", mouse_pos, base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
 
+    # ---------------------------
+    # PRESETS
+    # ---------------------------
     draw_text(surface, "Presets", subtitle_font, TITLE_COLOR, CONTROL_PANEL_X + 790, CONTROL_PANEL_Y + 12)
     draw_button(surface, buttons["preset_balanced"], button_font, "Balanced", mouse_pos)
     draw_button(surface, buttons["preset_blue"], button_font, "Blue Faster", mouse_pos)
     draw_button(surface, buttons["preset_yellow"], button_font, "Yellow Faster", mouse_pos)
 
-    draw_text(surface, f"Labels: {'On' if show_labels else 'Off'}", subtitle_font, SUBTLE_TEXT, CONTROL_PANEL_X + 1010, CONTROL_PANEL_Y + 14)
-    draw_text(surface, f"Auto Demo: {'On' if auto_demo_mode else 'Off'}", subtitle_font, SUBTLE_TEXT, CONTROL_PANEL_X + 1010, CONTROL_PANEL_Y + 52)
-    draw_button(surface, buttons["toggle_labels"], button_font, "Labels", mouse_pos, base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
-    draw_button(surface, buttons["toggle_fullscreen"], button_font, "Windowed" if fullscreen else "Fullscreen", mouse_pos, base_color=BUTTON_BLUE, hover_color=BUTTON_BLUE_HOVER)
-    draw_button(surface, buttons["toggle_presentation"], button_font, "Present On" if presentation_mode else "Present Off", mouse_pos, base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
-    draw_button(surface, buttons["toggle_auto_demo"], button_font, "Auto Demo", mouse_pos, base_color=BUTTON_ORANGE, hover_color=BUTTON_ORANGE_HOVER)
+    # ---------------------------
+    # RIGHT STATUS TEXT (FIXED)
+    # ---------------------------
+    base_x = CONTROL_PANEL_X + 1000   # adjust slightly left/right if needed
+    base_y = CONTROL_PANEL_Y + 14
+    line_spacing = subtitle_font.get_height() + 6
 
+    draw_text(surface,
+              f"Labels: {'On' if show_labels else 'Off'}",
+              subtitle_font, SUBTLE_TEXT,
+              base_x, base_y)
 
+    draw_text(surface,
+              f"Auto Demo: {'On' if auto_demo_mode else 'Off'}",
+              subtitle_font, SUBTLE_TEXT,
+              base_x, base_y + line_spacing)
+
+    # ---------------------------
+    # RIGHT BUTTONS
+    # ---------------------------
+    draw_button(surface, buttons["toggle_labels"], button_font, "Labels", mouse_pos,
+                base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
+
+    draw_button(surface, buttons["toggle_fullscreen"], button_font,
+                "Windowed" if fullscreen else "Fullscreen", mouse_pos,
+                base_color=BUTTON_BLUE, hover_color=BUTTON_BLUE_HOVER)
+
+    draw_button(surface, buttons["toggle_presentation"], button_font,
+                "Present On" if presentation_mode else "Present Off", mouse_pos,
+                base_color=BUTTON_GRAY, hover_color=BUTTON_GRAY_HOVER)
+
+    draw_button(surface, buttons["toggle_auto_demo"], button_font,
+                "Auto Demo", mouse_pos,
+                base_color=BUTTON_ORANGE, hover_color=BUTTON_ORANGE_HOVER)
 def draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor, fullscreen, presentation_mode, auto_demo_mode):
     _, _, label_font, small_font, _ = fonts
-    box_w = 320
-    box_h = 206
+
+    # ---------------------------
+    # CONTENT
+    # ---------------------------
+    left_items = [
+        "Blue vehicle → blue branch",
+        "Yellow vehicle → yellow branch",
+        "Blue split / merge path",
+        "Yellow split / merge path",
+    ]
+
+    right_items = [
+        f"Status: {'Paused' if paused else 'Running'}",
+        f"Blue: {blue_speed_factor:.2f}x",
+        f"Yellow: {yellow_speed_factor:.2f}x",
+        f"Auto Demo: {'On' if auto_demo_mode else 'Off'}",
+        f"Fullscreen: {'On' if fullscreen else 'Off'}",
+        f"Present: {'On' if presentation_mode else 'Off'}",
+        "Step advances one takt",
+    ]
+
+    # ---------------------------
+    # MEASURE TEXT WIDTHS
+    # ---------------------------
+    max_left_width = 0
+    for text in left_items:
+        w = small_font.render(text, True, TEXT_COLOR).get_width()
+        max_left_width = max(max_left_width, w)
+
+    max_right_width = 0
+    for text in right_items:
+        w = small_font.render(text, True, TEXT_COLOR).get_width()
+        max_right_width = max(max_right_width, w)
+
+    # ---------------------------
+    # LAYOUT CONSTANTS
+    # ---------------------------
+    icon_offset = 46
+    padding = 16
+    column_spacing = 40
+
+    # ---------------------------
+    # AUTO WIDTH CALCULATION
+    # ---------------------------
+    box_w = (
+        padding * 2 +
+        icon_offset +
+        max_left_width +
+        column_spacing +
+        max_right_width
+    )
+
+    box_h = 210  # keep fixed height for now
+
     box_x = SCREEN_WIDTH - box_w - 36
     box_y = SCREEN_HEIGHT - box_h - 54
-    box = pygame.Rect(box_x, box_y, box_w, box_h)
+
+    box = pygame.Rect(int(box_x), int(box_y), int(box_w), int(box_h))
+
+    # ---------------------------
+    # DRAW BOX
+    # ---------------------------
     pygame.draw.rect(surface, LEGEND_BG, box, border_radius=12)
     pygame.draw.rect(surface, PANEL_BORDER, box, width=2, border_radius=12)
 
     draw_text(surface, "Legend", label_font, TITLE_COLOR, box.x + 16, box.y + 12)
 
+    # Column positions
+    left_x = box.x + icon_offset
+    right_x = left_x + max_left_width + column_spacing
+
+    # ---------------------------
+    # LEFT COLUMN
+    # ---------------------------
     pygame.draw.circle(surface, VEHICLE_BLUE, (box.x + 28, box.y + 52), 10)
-    draw_text(surface, "Blue vehicle → blue branch", small_font, TEXT_COLOR, box.x + 46, box.y + 43)
+    draw_text(surface, left_items[0], small_font, TEXT_COLOR, left_x, box.y + 43)
 
     pygame.draw.circle(surface, VEHICLE_YELLOW, (box.x + 28, box.y + 82), 10)
-    draw_text(surface, "Yellow vehicle → yellow branch", small_font, TEXT_COLOR, box.x + 46, box.y + 73)
+    draw_text(surface, left_items[1], small_font, TEXT_COLOR, left_x, box.y + 73)
 
     pygame.draw.line(surface, SPLIT_LINE_BLUE, (box.x + 16, box.y + 112), (box.x + 40, box.y + 112), 4)
-    draw_text(surface, "Blue split / merge path", small_font, TEXT_COLOR, box.x + 46, box.y + 103)
+    draw_text(surface, left_items[2], small_font, TEXT_COLOR, left_x, box.y + 103)
 
     pygame.draw.line(surface, SPLIT_LINE_YELLOW, (box.x + 16, box.y + 142), (box.x + 40, box.y + 142), 4)
-    draw_text(surface, "Yellow split / merge path", small_font, TEXT_COLOR, box.x + 46, box.y + 133)
+    draw_text(surface, left_items[3], small_font, TEXT_COLOR, left_x, box.y + 133)
 
-    draw_text(surface, f"Status: {'Paused' if paused else 'Running'}", small_font, TITLE_COLOR, box.x + 178, box.y + 14)
-    draw_text(surface, f"Blue: {blue_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 178, box.y + 40)
-    draw_text(surface, f"Yellow: {yellow_speed_factor:.2f}x", small_font, SUBTLE_TEXT, box.x + 178, box.y + 62)
-    draw_text(surface, f"Auto Demo: {'On' if auto_demo_mode else 'Off'}", small_font, SUBTLE_TEXT, box.x + 178, box.y + 84)
-    draw_text(surface, f"Fullscreen: {'On' if fullscreen else 'Off'}", small_font, SUBTLE_TEXT, box.x + 178, box.y + 106)
-    draw_text(surface, f"Present: {'On' if presentation_mode else 'Off'}", small_font, SUBTLE_TEXT, box.x + 178, box.y + 128)
-    draw_text(surface, "Step advances one takt", small_font, SUBTLE_TEXT, box.x + 178, box.y + 150)
+    # ---------------------------
+    # RIGHT COLUMN
+    # ---------------------------
+    y = box.y + 14
+    line_height = 22
+
+    for text in right_items:
+        draw_text(surface, text, small_font, SUBTLE_TEXT, right_x, y)
+        y += line_height
+
+    # ---------------------------
+    # OPTIONAL DIVIDER
+    # ---------------------------
+    divider_x = right_x - 12
+    pygame.draw.line(surface, PANEL_BORDER,
+                     (divider_x, box.y + 10),
+                     (divider_x, box.bottom - 10), 1)
 
 
 def draw_shortcuts_bar(surface, small_font, presentation_mode):
