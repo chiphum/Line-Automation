@@ -76,13 +76,15 @@ STATUS_Y = 70
 CONTROL_PANEL_X = 40
 CONTROL_PANEL_Y = 110
 CONTROL_PANEL_W = 1520
-CONTROL_PANEL_H = 138  # enough for two clean rows + padding
+CONTROL_PANEL_H = 188  # expanded so top controls + bottom row fit cleanly
 
-
-# --- Bottom row layout (new) ---
-BOTTOM_ROW_Y = CONTROL_PANEL_Y + CONTROL_PANEL_H - 40
-BOTTOM_ROW_SPACING = 170
+# Header row anchors
+TOP_ROW_Y = CONTROL_PANEL_Y + 34
+SECOND_ROW_Y = CONTROL_PANEL_Y + 86
+BOTTOM_ROW_Y = CONTROL_PANEL_Y + CONTROL_PANEL_H - 46
 BOTTOM_ROW_START_X = CONTROL_PANEL_X + 40
+BOTTOM_STATUS_X = CONTROL_PANEL_X + 660
+BOTTOM_ROW_SPACING = 170
 
 
 MAIN_LABEL_OFFSET_Y = 60
@@ -599,72 +601,94 @@ def draw_header_controls(surface, fonts, buttons,
                          paused, show_labels, fullscreen,
                          presentation_mode, auto_demo_mode):
 
-    _, subtitle_font, _, _, button_font = fonts
+    _, subtitle_font, _, small_font, button_font = fonts
     mouse_pos = pygame.mouse.get_pos()
 
-    # --- Existing header background (keep if you already draw it elsewhere) ---
     panel_rect = pygame.Rect(CONTROL_PANEL_X, CONTROL_PANEL_Y,
                              CONTROL_PANEL_W, CONTROL_PANEL_H)
     pygame.draw.rect(surface, PANEL_BG, panel_rect, border_radius=10)
     pygame.draw.rect(surface, PANEL_BORDER, panel_rect, width=2, border_radius=10)
 
-    # --------------------------------------------------
-    # Bottom control row (NEW LAYOUT)
-    # --------------------------------------------------
+    # Section headers
+    draw_text(surface, "Blue Speed", small_font, SUBTLE_TEXT,
+            CONTROL_PANEL_X + 40, CONTROL_PANEL_Y + 8)
+    draw_text(surface, "Yellow Speed", small_font, SUBTLE_TEXT,
+            CONTROL_PANEL_X + 260, CONTROL_PANEL_Y + 8)
+    draw_text(surface, "Playback", small_font, SUBTLE_TEXT,
+            CONTROL_PANEL_X + 490, CONTROL_PANEL_Y + 8)
+    draw_text(surface, "Presets", small_font, SUBTLE_TEXT,
+            CONTROL_PANEL_X + 640, CONTROL_PANEL_Y + 8)
+    draw_text(surface, "Display", small_font, SUBTLE_TEXT,
+            CONTROL_PANEL_X + 1080, CONTROL_PANEL_Y + 8)
 
-    y = BOTTOM_ROW_Y
-    x = BOTTOM_ROW_START_X
+    # Speed readouts
+    draw_text(surface, f"{blue_speed_factor:.2f}x", subtitle_font, TEXT_COLOR,
+              CONTROL_PANEL_X + 40, TOP_ROW_Y + 4)
+    draw_button(surface, buttons["blue_minus"], button_font, "-", mouse_pos,
+                BUTTON_BLUE, BUTTON_BLUE_HOVER)
+    draw_button(surface, buttons["blue_plus"], button_font, "+", mouse_pos,
+                BUTTON_BLUE, BUTTON_BLUE_HOVER)
 
-    # Optional separator line (clean visual)
-    pygame.draw.line(surface,
-                     PANEL_BORDER,
-                     (CONTROL_PANEL_X + 20, y - 10),
-                     (CONTROL_PANEL_X + CONTROL_PANEL_W - 20, y - 10),
+    draw_text(surface, f"{yellow_speed_factor:.2f}x", subtitle_font, TEXT_COLOR,
+              CONTROL_PANEL_X + 260, TOP_ROW_Y + 4)
+    draw_button(surface, buttons["yellow_minus"], button_font, "-", mouse_pos,
+                BUTTON_ORANGE, BUTTON_ORANGE_HOVER)
+    draw_button(surface, buttons["yellow_plus"], button_font, "+", mouse_pos,
+                BUTTON_ORANGE, BUTTON_ORANGE_HOVER)
+
+    # Playback controls
+    draw_button(surface, buttons["play_pause"], button_font,
+                "Pause" if not paused else "Play",
+                mouse_pos,
+                BUTTON_GRAY, BUTTON_GRAY_HOVER)
+    draw_button(surface, buttons["step"], button_font, "Step", mouse_pos,
+                BUTTON_BLUE, BUTTON_BLUE_HOVER)
+    draw_button(surface, buttons["reset"], button_font, "Reset", mouse_pos,
+                BUTTON_GRAY, BUTTON_GRAY_HOVER)
+
+    # Presets row
+    draw_button(surface, buttons["preset_balanced"], button_font,
+                "Balanced", mouse_pos,
+                BUTTON_GREEN, BUTTON_GREEN_HOVER)
+    draw_button(surface, buttons["preset_blue"], button_font,
+                "Blue Faster", mouse_pos,
+                BUTTON_BLUE, BUTTON_BLUE_HOVER)
+    draw_button(surface, buttons["preset_yellow"], button_font,
+                "Yellow Faster", mouse_pos,
+                BUTTON_ORANGE, BUTTON_ORANGE_HOVER)
+
+    # Display button (top-right)
+    draw_button(surface, buttons["toggle_fullscreen"], button_font,
+                f"Fullscreen {'On' if fullscreen else 'Off'}",
+                mouse_pos,
+                BUTTON_GRAY, BUTTON_GRAY_HOVER)
+
+    # Bottom-row separator
+    pygame.draw.line(surface, PANEL_BORDER,
+                     (CONTROL_PANEL_X + 20, BOTTOM_ROW_Y - 12),
+                     (CONTROL_PANEL_X + CONTROL_PANEL_W - 20, BOTTOM_ROW_Y - 12),
                      2)
 
-    # --- Labels toggle ---
-    rect_labels = pygame.Rect(x, y, 130, BTN_H)
-    draw_button(surface, rect_labels, button_font,
+    # Bottom-row controls requested by user
+    draw_button(surface, buttons["toggle_labels"], button_font,
                 f"Labels {'On' if show_labels else 'Off'}",
                 mouse_pos,
                 BUTTON_BLUE, BUTTON_BLUE_HOVER)
-
-    buttons["labels"] = rect_labels  # store for click handling
-    x += BOTTOM_ROW_SPACING
-
-    # --- Auto Demo toggle ---
-    rect_auto = pygame.Rect(x, y, 150, BTN_H)
-    draw_button(surface, rect_auto, button_font,
-                f"Auto {'On' if auto_demo_mode else 'Off'}",
-                mouse_pos,
-                BUTTON_ORANGE, BUTTON_ORANGE_HOVER)
-
-    buttons["auto"] = rect_auto
-    x += BOTTOM_ROW_SPACING
-
-    # --- Presentation toggle ---
-    rect_present = pygame.Rect(x, y, 150, BTN_H)
-    draw_button(surface, rect_present, button_font,
+    draw_button(surface, buttons["toggle_presentation"], button_font,
                 f"Present {'On' if presentation_mode else 'Off'}",
                 mouse_pos,
                 BUTTON_GREEN, BUTTON_GREEN_HOVER)
+    draw_button(surface, buttons["toggle_auto_demo"], button_font,
+                f"Auto Demo {'On' if auto_demo_mode else 'Off'}",
+                mouse_pos,
+                BUTTON_ORANGE, BUTTON_ORANGE_HOVER)
 
-    buttons["present"] = rect_present
-    x += BOTTOM_ROW_SPACING
-
-    # --- Status display (text, not button) ---
-    status_text = "Paused" if paused else "Running"
     draw_text(surface,
-              f"Status: {status_text}",
+              f"Status: {'Paused' if paused else 'Running'}",
               subtitle_font,
               TEXT_COLOR,
-              x,
-              y + 6)
-
-    # --------------------------------------------------
-    # (OPTIONAL) Existing top-row controls can stay here
-    # Keep your speed sliders / buttons above
-    # --------------------------------------------------
+              BOTTOM_STATUS_X,
+              BOTTOM_ROW_Y + 4)
 
 
 def draw_legend(surface, fonts, paused, blue_speed_factor, yellow_speed_factor,
@@ -1113,29 +1137,30 @@ def main():
     # ------------------------------------------------------------------
     buttons = {
         # Blue speed
-        "blue_minus": pygame.Rect(CONTROL_PANEL_X + 100, CONTROL_PANEL_Y + 34, 42, 34),
-        "blue_plus":  pygame.Rect(CONTROL_PANEL_X + 148, CONTROL_PANEL_Y + 34, 42, 34),
+        "blue_minus": pygame.Rect(CONTROL_PANEL_X + 110, TOP_ROW_Y, 42, 34),
+        "blue_plus":  pygame.Rect(CONTROL_PANEL_X + 158, TOP_ROW_Y, 42, 34),
 
         # Yellow speed
-        "yellow_minus": pygame.Rect(CONTROL_PANEL_X + 312, CONTROL_PANEL_Y + 34, 42, 34),
-        "yellow_plus":  pygame.Rect(CONTROL_PANEL_X + 360, CONTROL_PANEL_Y + 34, 42, 34),
+        "yellow_minus": pygame.Rect(CONTROL_PANEL_X + 340, TOP_ROW_Y, 42, 34),
+        "yellow_plus":  pygame.Rect(CONTROL_PANEL_X + 388, TOP_ROW_Y, 42, 34),
 
         # Playback
-        "play_pause": pygame.Rect(CONTROL_PANEL_X + 440, CONTROL_PANEL_Y + 34,  90, 38),
-        "step":       pygame.Rect(CONTROL_PANEL_X + 540, CONTROL_PANEL_Y + 34,  84, 38),
-        "reset":      pygame.Rect(CONTROL_PANEL_X + 634, CONTROL_PANEL_Y + 34,  84, 38),
+        "play_pause": pygame.Rect(CONTROL_PANEL_X + 490, TOP_ROW_Y - 2, 96, 38),
+        "step":       pygame.Rect(CONTROL_PANEL_X + 594, TOP_ROW_Y - 2, 84, 38),
+        "reset":      pygame.Rect(CONTROL_PANEL_X + 686, TOP_ROW_Y - 2, 84, 38),
 
         # Presets
-        "preset_balanced": pygame.Rect(CONTROL_PANEL_X + 768,  CONTROL_PANEL_Y + 58, 110, 38),
-        "preset_blue":     pygame.Rect(CONTROL_PANEL_X + 888,  CONTROL_PANEL_Y + 58, 132, 38),
-        "preset_yellow":   pygame.Rect(CONTROL_PANEL_X + 1030, CONTROL_PANEL_Y + 58, 142, 38),
+        "preset_balanced": pygame.Rect(CONTROL_PANEL_X + 640,  SECOND_ROW_Y - 2, 110, 38),
+        "preset_blue":     pygame.Rect(CONTROL_PANEL_X + 760,  SECOND_ROW_Y - 2, 132, 38),
+        "preset_yellow":   pygame.Rect(CONTROL_PANEL_X + 902,  SECOND_ROW_Y - 2, 142, 38),
 
-        # Right-side 2 × 2 grid  (row 1: Labels | Fullscreen)
-        #                         (row 2: Present | Auto Demo)
-        "toggle_labels":       pygame.Rect(BTN_COL_X,              BTN_ROW1_Y, BTN_W1, BTN_H),
-        "toggle_fullscreen":   pygame.Rect(BTN_COL_X + BTN_W1 + 6, BTN_ROW1_Y, BTN_W2, BTN_H),
-        "toggle_presentation": pygame.Rect(BTN_COL_X,              BTN_ROW2_Y, BTN_W1, BTN_H),
-        "toggle_auto_demo":    pygame.Rect(BTN_COL_X + BTN_W1 + 6, BTN_ROW2_Y, BTN_W2, BTN_H),
+        # Display control (top-right)
+        "toggle_fullscreen": pygame.Rect(CONTROL_PANEL_X + 1080, TOP_ROW_Y, 170, BTN_H),
+
+        # Bottom row requested by user
+        "toggle_labels":       pygame.Rect(CONTROL_PANEL_X + 40,  BOTTOM_ROW_Y, 150, BTN_H),
+        "toggle_presentation": pygame.Rect(CONTROL_PANEL_X + 210, BOTTOM_ROW_Y, 150, BTN_H),
+        "toggle_auto_demo":    pygame.Rect(CONTROL_PANEL_X + 380, BOTTOM_ROW_Y, 170, BTN_H),
     }
 
     blue_branch_speed_factor   = INITIAL_BLUE_BRANCH_SPEED_FACTOR
