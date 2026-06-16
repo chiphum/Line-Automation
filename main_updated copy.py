@@ -77,7 +77,24 @@ STATUS_Y = 70
 CONTROL_PANEL_X = 40
 CONTROL_PANEL_Y = 110
 CONTROL_PANEL_W = 1520
-CONTROL_PANEL_H = 132  # increased to support two clean rows
+# CONTROL_PANEL_H = 200  # expanded so top controls + bottom row fit cleanly
+CONTROL_PANEL_H = 220
+
+# Header row anchors
+# TOP_ROW_Y = CONTROL_PANEL_Y + 34
+TOP_ROW_Y = CONTROL_PANEL_Y + 34
+# SECOND_ROW_Y = CONTROL_PANEL_Y + 86
+
+ROW_GAP = 68
+SECOND_ROW_Y = TOP_ROW_Y + ROW_GAP
+
+BOTTOM_PADDING = 50
+
+BOTTOM_ROW_Y = CONTROL_PANEL_Y + CONTROL_PANEL_H - BOTTOM_PADDING
+BOTTOM_ROW_START_X = CONTROL_PANEL_X + 40
+BOTTOM_STATUS_X = CONTROL_PANEL_X + 660
+BOTTOM_ROW_SPACING = 170
+
 
 MAIN_LABEL_OFFSET_Y = 60
 BRANCH_LABEL_OFFSET_Y = 45
@@ -91,7 +108,7 @@ BRANCH_START_OFFSET_X = int(24 * DIAGRAM_SCALE)
 OUT_START_OFFSET_X = 120
 
 # ----------------------------
-# Dynamic vertical layout (prevents overlap)
+# Dynamic vertical layout
 # ----------------------------
 TOP_UI_BOTTOM = CONTROL_PANEL_Y + CONTROL_PANEL_H
 VERTICAL_SPACING = 70
@@ -128,8 +145,22 @@ PRESETS = {
     "yellow_faster": (0.35, 0.90),
 }
 
-# CAD-style connector geometry
 CONNECTOR_OFFSET = 22
+
+# ----------------------------
+# Right-side column anchors
+# Keeps status text and buttons
+# from ever touching each other.
+# ----------------------------
+# Status text lives at STATUS_COL_X
+# Buttons start at BTN_COL_X
+STATUS_COL_X = CONTROL_PANEL_X + 1148  # left edge of the status text block
+BTN_COL_X = CONTROL_PANEL_X + 1300  # left edge of the 2 × 2 button grid
+BTN_W1 = 100  # "Labels" / "Present" button width
+BTN_W2 = 148  # "Fullscreen" / "Auto Demo" button width
+BTN_H = 34
+BTN_ROW1_Y = CONTROL_PANEL_Y + 14
+BTN_ROW2_Y = CONTROL_PANEL_Y + 58
 
 
 # ----------------------------
@@ -452,7 +483,6 @@ def draw_text(surface, text, font, color, x, y, center=False):
 def draw_pitch(surface, font, pitch_num, rect, prefix, show_labels=True):
     pygame.draw.rect(surface, LINE_COLOR, rect, border_radius=6)
     pygame.draw.rect(surface, LINE_BORDER, rect, width=2, border_radius=6)
-
     if show_labels:
         label = font.render(f"{prefix}{pitch_num}", True, TEXT_COLOR)
         label_rect = label.get_rect(center=(rect.centerx, rect.bottom + 14))
@@ -636,6 +666,20 @@ def draw_output_main_line(surface, label_font, show_labels=True):
         )
 
 
+# ---------------------------------------------------------------
+# draw_header_controls  –  fully rewritten right-side section
+# Layout map (all X values are absolute screen pixels):
+#
+#  [Blue Speed]  [Yellow Speed]  [Playback]  [Presets]
+#  |<---- left half ---->|       |<-middle->|
+#                                            STATUS_COL_X
+#                                            Labels: On/Off
+#                                            Auto Demo: On/Off
+#                                            Present: On/Off
+#                                            |  BTN_COL_X
+#                                            |  [Labels] [Fullscreen]
+#                                            |  [Present] [Auto Demo]
+# ---------------------------------------------------------------
 def draw_header_controls(
     surface,
     fonts,
@@ -648,71 +692,125 @@ def draw_header_controls(
     presentation_mode,
     auto_demo_mode,
 ):
-    _, subtitle_font, _, _, button_font = fonts
+
+    _, subtitle_font, _, small_font, button_font = fonts
     mouse_pos = pygame.mouse.get_pos()
 
     panel_rect = pygame.Rect(
         CONTROL_PANEL_X, CONTROL_PANEL_Y, CONTROL_PANEL_W, CONTROL_PANEL_H
     )
-    pygame.draw.rect(surface, PANEL_BG, panel_rect, border_radius=12)
-    pygame.draw.rect(surface, PANEL_BORDER, panel_rect, width=2, border_radius=12)
+    pygame.draw.rect(surface, PANEL_BG, panel_rect, border_radius=10)
+    pygame.draw.rect(surface, PANEL_BORDER, panel_rect, width=2, border_radius=10)
 
-    # Left side
+    # Section headers
     draw_text(
         surface,
         "Blue Speed",
-        subtitle_font,
-        TITLE_COLOR,
-        CONTROL_PANEL_X + 18,
-        CONTROL_PANEL_Y + 12,
+        small_font,
+        SUBTLE_TEXT,
+        CONTROL_PANEL_X + 40,
+        CONTROL_PANEL_Y + 8,
     )
+    draw_text(
+        surface,
+        "Yellow Speed",
+        small_font,
+        SUBTLE_TEXT,
+        CONTROL_PANEL_X + 260,
+        CONTROL_PANEL_Y + 8,
+    )
+    draw_text(
+        surface,
+        "Playback",
+        small_font,
+        SUBTLE_TEXT,
+        CONTROL_PANEL_X + 490,
+        CONTROL_PANEL_Y + 8,
+    )
+    # draw_text(surface, "Presets", small_font, SUBTLE_TEXT,
+    #         CONTROL_PANEL_X + 640, CONTROL_PANEL_Y + 8)
+    draw_text(
+        surface,
+        "Presets",
+        small_font,
+        SUBTLE_TEXT,
+        CONTROL_PANEL_X + 640,
+        SECOND_ROW_Y - 22,
+    )
+
+    draw_text(
+        surface,
+        "Display",
+        small_font,
+        SUBTLE_TEXT,
+        CONTROL_PANEL_X + 1080,
+        CONTROL_PANEL_Y + 8,
+    )
+
+    # Speed readouts
     draw_text(
         surface,
         f"{blue_speed_factor:.2f}x",
         subtitle_font,
         TEXT_COLOR,
-        CONTROL_PANEL_X + 20,
-        CONTROL_PANEL_Y + 44,
+        CONTROL_PANEL_X + 40,
+        TOP_ROW_Y + 4,
     )
-    draw_button(surface, buttons["blue_minus"], button_font, "-", mouse_pos)
-    draw_button(surface, buttons["blue_plus"], button_font, "+", mouse_pos)
-
-    draw_text(
+    draw_button(
         surface,
-        "Yellow Speed",
-        subtitle_font,
-        TITLE_COLOR,
-        CONTROL_PANEL_X + 226,
-        CONTROL_PANEL_Y + 12,
+        buttons["blue_minus"],
+        button_font,
+        "-",
+        mouse_pos,
+        BUTTON_BLUE,
+        BUTTON_BLUE_HOVER,
     )
+    draw_button(
+        surface,
+        buttons["blue_plus"],
+        button_font,
+        "+",
+        mouse_pos,
+        BUTTON_BLUE,
+        BUTTON_BLUE_HOVER,
+    )
+
     draw_text(
         surface,
         f"{yellow_speed_factor:.2f}x",
         subtitle_font,
         TEXT_COLOR,
-        CONTROL_PANEL_X + 228,
-        CONTROL_PANEL_Y + 44,
+        CONTROL_PANEL_X + 260,
+        TOP_ROW_Y + 4,
     )
-    draw_button(surface, buttons["yellow_minus"], button_font, "-", mouse_pos)
-    draw_button(surface, buttons["yellow_plus"], button_font, "+", mouse_pos)
-
-    # Playback
-    draw_text(
+    draw_button(
         surface,
-        "Playback",
-        subtitle_font,
-        TITLE_COLOR,
-        CONTROL_PANEL_X + 450,
-        CONTROL_PANEL_Y + 12,
+        buttons["yellow_minus"],
+        button_font,
+        "-",
+        mouse_pos,
+        BUTTON_ORANGE,
+        BUTTON_ORANGE_HOVER,
     )
+    draw_button(
+        surface,
+        buttons["yellow_plus"],
+        button_font,
+        "+",
+        mouse_pos,
+        BUTTON_ORANGE,
+        BUTTON_ORANGE_HOVER,
+    )
+
+    # Playback controls
     draw_button(
         surface,
         buttons["play_pause"],
         button_font,
-        "Play" if paused else "Pause",
+        "Pause" if not paused else "Play",
         mouse_pos,
-        base_color=BUTTON_GREEN,
-        hover_color=BUTTON_GREEN_HOVER,
+        BUTTON_GRAY,
+        BUTTON_GRAY_HOVER,
     )
     draw_button(
         surface,
@@ -720,8 +818,8 @@ def draw_header_controls(
         button_font,
         "Step",
         mouse_pos,
-        base_color=BUTTON_ORANGE,
-        hover_color=BUTTON_ORANGE_HOVER,
+        BUTTON_BLUE,
+        BUTTON_BLUE_HOVER,
     )
     draw_button(
         surface,
@@ -729,89 +827,95 @@ def draw_header_controls(
         button_font,
         "Reset",
         mouse_pos,
-        base_color=BUTTON_GRAY,
-        hover_color=BUTTON_GRAY_HOVER,
+        BUTTON_GRAY,
+        BUTTON_GRAY_HOVER,
     )
 
-    # Presets title
-    draw_text(
-        surface,
-        "Presets",
-        subtitle_font,
-        TITLE_COLOR,
-        CONTROL_PANEL_X + 790,
-        CONTROL_PANEL_Y + 12,
-    )
-
-    # Status text (top row, separate lane)
-    status_x = CONTROL_PANEL_X + 980
-    status_y = CONTROL_PANEL_Y + 12
-    line_spacing = subtitle_font.get_height() + 4
-
-    draw_text(
-        surface,
-        f"Labels: {'On' if show_labels else 'Off'}",
-        subtitle_font,
-        SUBTLE_TEXT,
-        status_x,
-        status_y,
-    )
-
-    draw_text(
-        surface,
-        f"Auto Demo: {'On' if auto_demo_mode else 'Off'}",
-        subtitle_font,
-        SUBTLE_TEXT,
-        status_x,
-        status_y + line_spacing,
-    )
-
-    # Preset buttons (bottom row)
-    draw_button(surface, buttons["preset_balanced"], button_font, "Balanced", mouse_pos)
-    draw_button(surface, buttons["preset_blue"], button_font, "Blue Faster", mouse_pos)
-    draw_button(
-        surface, buttons["preset_yellow"], button_font, "Yellow Faster", mouse_pos
-    )
-
-    # Right-side buttons
+    # Presets row
     draw_button(
         surface,
-        buttons["toggle_labels"],
+        buttons["preset_balanced"],
         button_font,
-        "Labels",
+        "Balanced",
         mouse_pos,
-        base_color=BUTTON_GRAY,
-        hover_color=BUTTON_GRAY_HOVER,
+        BUTTON_GREEN,
+        BUTTON_GREEN_HOVER,
+    )
+    draw_button(
+        surface,
+        buttons["preset_blue"],
+        button_font,
+        "Blue Faster",
+        mouse_pos,
+        BUTTON_BLUE,
+        BUTTON_BLUE_HOVER,
+    )
+    draw_button(
+        surface,
+        buttons["preset_yellow"],
+        button_font,
+        "Yellow Faster",
+        mouse_pos,
+        BUTTON_ORANGE,
+        BUTTON_ORANGE_HOVER,
     )
 
+    # Display button (top-right)
     draw_button(
         surface,
         buttons["toggle_fullscreen"],
         button_font,
-        "Windowed" if fullscreen else "Fullscreen",
+        f"Fullscreen {'On' if fullscreen else 'Off'}",
         mouse_pos,
-        base_color=BUTTON_BLUE,
-        hover_color=BUTTON_BLUE_HOVER,
+        BUTTON_GRAY,
+        BUTTON_GRAY_HOVER,
     )
 
+    # Bottom-row separator
+    pygame.draw.line(
+        surface,
+        PANEL_BORDER,
+        (CONTROL_PANEL_X + 20, BOTTOM_ROW_Y - 12),
+        (CONTROL_PANEL_X + CONTROL_PANEL_W - 20, BOTTOM_ROW_Y - 12),
+        2,
+    )
+
+    # Bottom-row controls requested by user
+    draw_button(
+        surface,
+        buttons["toggle_labels"],
+        button_font,
+        f"Labels {'On' if show_labels else 'Off'}",
+        mouse_pos,
+        BUTTON_BLUE,
+        BUTTON_BLUE_HOVER,
+    )
     draw_button(
         surface,
         buttons["toggle_presentation"],
         button_font,
-        "Present On" if presentation_mode else "Present Off",
+        f"Present {'On' if presentation_mode else 'Off'}",
         mouse_pos,
-        base_color=BUTTON_GRAY,
-        hover_color=BUTTON_GRAY_HOVER,
+        BUTTON_GREEN,
+        BUTTON_GREEN_HOVER,
     )
-
     draw_button(
         surface,
         buttons["toggle_auto_demo"],
         button_font,
-        "Auto Demo",
+        f"Auto Demo {'On' if auto_demo_mode else 'Off'}",
         mouse_pos,
-        base_color=BUTTON_ORANGE,
-        hover_color=BUTTON_ORANGE_HOVER,
+        BUTTON_ORANGE,
+        BUTTON_ORANGE_HOVER,
+    )
+
+    draw_text(
+        surface,
+        f"Status: {'Paused' if paused else 'Running'}",
+        subtitle_font,
+        TEXT_COLOR,
+        BOTTOM_STATUS_X,
+        BOTTOM_ROW_Y + 4,
     )
 
 
@@ -833,7 +937,6 @@ def draw_legend(
         "Blue split / merge path",
         "Yellow split / merge path",
     ]
-
     right_items = [
         f"Status: {'Paused' if paused else 'Running'}",
         f"Blue: {blue_speed_factor:.2f}x",
@@ -844,15 +947,12 @@ def draw_legend(
         "Step advances one takt",
     ]
 
-    max_left_width = 0
-    for text in left_items:
-        w = small_font.render(text, True, TEXT_COLOR).get_width()
-        max_left_width = max(max_left_width, w)
-
-    max_right_width = 0
-    for text in right_items:
-        w = small_font.render(text, True, TEXT_COLOR).get_width()
-        max_right_width = max(max_right_width, w)
+    max_left_width = max(
+        small_font.render(t, True, TEXT_COLOR).get_width() for t in left_items
+    )
+    max_right_width = max(
+        small_font.render(t, True, TEXT_COLOR).get_width() for t in right_items
+    )
 
     icon_offset = 46
     padding = 16
@@ -862,7 +962,6 @@ def draw_legend(
         padding * 2 + icon_offset + max_left_width + column_spacing + max_right_width
     )
     box_h = 210
-
     box_x = SCREEN_WIDTH - box_w - 36
     box_y = SCREEN_HEIGHT - box_h - 54
     box = pygame.Rect(int(box_x), int(box_y), int(box_w), int(box_h))
@@ -901,7 +1000,6 @@ def draw_legend(
 
     y = box.y + 14
     line_height = small_font.get_height() + 6
-
     for text in right_items:
         draw_text(surface, text, small_font, SUBTLE_TEXT, right_x, y)
         y += line_height
@@ -913,7 +1011,10 @@ def draw_legend(
 
 
 def draw_shortcuts_bar(surface, small_font, presentation_mode):
-    text = "Space Pause/Play   Right Step   F Fullscreen   P Presentation   A Auto Demo   L Labels   R Reset"
+    text = (
+        "Space Pause/Play   Right Step   F Fullscreen   "
+        "P Presentation   A Auto Demo   L Labels   R Reset"
+    )
     if presentation_mode:
         overlay = pygame.Surface((1130, 34), pygame.SRCALPHA)
         overlay.fill(OVERLAY_BG)
@@ -936,8 +1037,12 @@ def draw_presentation_banner(
     _, subtitle_font, _, small_font, _ = fonts
     overlay = pygame.Surface((520, 96), pygame.SRCALPHA)
     overlay.fill(OVERLAY_BG)
-    surface.blit(overlay, (SCREEN_WIDTH - 560, 18))
-    box = pygame.Rect(SCREEN_WIDTH - 560, 18, 520, 96)
+    banner_x = SCREEN_WIDTH - 560
+    banner_y = TITLE_Y + 60  # ✅ small downward shift only
+
+    surface.blit(overlay, (banner_x, banner_y))
+    box = pygame.Rect(banner_x, banner_y, 520, 96)
+
     pygame.draw.rect(surface, PANEL_BORDER, box, width=1, border_radius=10)
     draw_text(
         surface, "Presentation Mode", subtitle_font, TITLE_COLOR, box.x + 16, box.y + 12
@@ -1111,11 +1216,9 @@ def clamp(value, min_value, max_value):
 
 def update_line_positions(vehicles_on_line, position_attr, speed, min_spacing):
     vehicles_on_line.sort(key=lambda v: getattr(v, position_attr), reverse=True)
-
     for i, vehicle in enumerate(vehicles_on_line):
         current_position = getattr(vehicle, position_attr)
         proposed_position = current_position + speed
-
         if i == 0:
             setattr(vehicle, position_attr, proposed_position)
         else:
@@ -1197,7 +1300,6 @@ def try_split_branch(vehicles, color_check, target_route, min_spacing):
 
     for vehicle in candidates:
         can_enter = False
-
         if len(splitting_vehicles) == 0:
             if last_branch_position is None:
                 can_enter = True
@@ -1232,12 +1334,10 @@ def find_merge_candidate(vehicles, source_route):
 def can_release_to_merge(vehicles):
     if any(v.route == "merging" for v in vehicles):
         return False
-
     out_vehicles = [
         v for v in vehicles if v.route == "out_main" and v.out_pitch_float is not None
     ]
     last_out_position = min([v.out_pitch_float for v in out_vehicles], default=None)
-
     if last_out_position is None:
         return True
     return last_out_position >= 1.0 + OUT_MAIN_MIN_SPACING
@@ -1251,7 +1351,6 @@ def try_merge_with_fairness(vehicles, merge_state):
         return
 
     chosen = None
-
     if blue_candidate and yellow_candidate:
         if merge_state["next_priority"] == "blue":
             chosen = blue_candidate
@@ -1426,38 +1525,38 @@ def main():
     screen = create_display(fullscreen=False)
     clock = pygame.time.Clock()
 
+    # ------------------------------------------------------------------
+    # Button layout
+    # Left / middle buttons are unchanged.
+    # Right-side 2 × 2 grid is anchored to BTN_COL_X / BTN_ROW1_Y / BTN_ROW2_Y
+    # so they can never collide with the status text at STATUS_COL_X.
+    # ------------------------------------------------------------------
     buttons = {
-        "blue_minus": pygame.Rect(CONTROL_PANEL_X + 100, CONTROL_PANEL_Y + 34, 42, 34),
-        "blue_plus": pygame.Rect(CONTROL_PANEL_X + 148, CONTROL_PANEL_Y + 34, 42, 34),
-        "yellow_minus": pygame.Rect(
-            CONTROL_PANEL_X + 312, CONTROL_PANEL_Y + 34, 42, 34
-        ),
-        "yellow_plus": pygame.Rect(CONTROL_PANEL_X + 360, CONTROL_PANEL_Y + 34, 42, 34),
-        "play_pause": pygame.Rect(CONTROL_PANEL_X + 440, CONTROL_PANEL_Y + 34, 90, 38),
-        "step": pygame.Rect(CONTROL_PANEL_X + 540, CONTROL_PANEL_Y + 34, 84, 38),
-        "reset": pygame.Rect(CONTROL_PANEL_X + 634, CONTROL_PANEL_Y + 34, 84, 38),
-        # Presets moved to lower row
+        # Blue speed
+        "blue_minus": pygame.Rect(CONTROL_PANEL_X + 110, TOP_ROW_Y, 42, 34),
+        "blue_plus": pygame.Rect(CONTROL_PANEL_X + 158, TOP_ROW_Y, 42, 34),
+        # Yellow speed
+        "yellow_minus": pygame.Rect(CONTROL_PANEL_X + 340, TOP_ROW_Y, 42, 34),
+        "yellow_plus": pygame.Rect(CONTROL_PANEL_X + 388, TOP_ROW_Y, 42, 34),
+        # Playback
+        "play_pause": pygame.Rect(CONTROL_PANEL_X + 490, TOP_ROW_Y - 2, 96, 38),
+        "step": pygame.Rect(CONTROL_PANEL_X + 594, TOP_ROW_Y - 2, 84, 38),
+        "reset": pygame.Rect(CONTROL_PANEL_X + 686, TOP_ROW_Y - 2, 84, 38),
+        # Presets
         "preset_balanced": pygame.Rect(
-            CONTROL_PANEL_X + 768, CONTROL_PANEL_Y + 58, 110, 38
+            CONTROL_PANEL_X + 640, SECOND_ROW_Y - 2, 110, 38
         ),
-        "preset_blue": pygame.Rect(
-            CONTROL_PANEL_X + 888, CONTROL_PANEL_Y + 58, 132, 38
-        ),
-        "preset_yellow": pygame.Rect(
-            CONTROL_PANEL_X + 1030, CONTROL_PANEL_Y + 58, 142, 38
-        ),
-        # Right-side toggles
-        "toggle_labels": pygame.Rect(
-            CONTROL_PANEL_X + 1210, CONTROL_PANEL_Y + 14, 114, 34
-        ),
-        "toggle_fullscreen": pygame.Rect(
-            CONTROL_PANEL_X + 1336, CONTROL_PANEL_Y + 14, 136, 34
-        ),
+        "preset_blue": pygame.Rect(CONTROL_PANEL_X + 760, SECOND_ROW_Y - 2, 132, 38),
+        "preset_yellow": pygame.Rect(CONTROL_PANEL_X + 902, SECOND_ROW_Y - 2, 142, 38),
+        # Display control (top-right)
+        "toggle_fullscreen": pygame.Rect(CONTROL_PANEL_X + 1080, TOP_ROW_Y, 170, BTN_H),
+        # Bottom row requested by user
+        "toggle_labels": pygame.Rect(CONTROL_PANEL_X + 40, BOTTOM_ROW_Y, 150, BTN_H),
         "toggle_presentation": pygame.Rect(
-            CONTROL_PANEL_X + 1210, CONTROL_PANEL_Y + 58, 126, 34
+            CONTROL_PANEL_X + 210, BOTTOM_ROW_Y, 150, BTN_H
         ),
         "toggle_auto_demo": pygame.Rect(
-            CONTROL_PANEL_X + 1348, CONTROL_PANEL_Y + 58, 124, 34
+            CONTROL_PANEL_X + 380, BOTTOM_ROW_Y, 170, BTN_H
         ),
     }
 
@@ -1537,9 +1636,10 @@ def main():
                 and event.button == 1
                 and not presentation_mode
             ):
-                if buttons["play_pause"].collidepoint(event.pos):
+                pos = event.pos
+                if buttons["play_pause"].collidepoint(pos):
                     paused = not paused
-                elif buttons["step"].collidepoint(event.pos):
+                elif buttons["step"].collidepoint(pos):
                     (
                         vehicles,
                         next_vehicle_id,
@@ -1555,7 +1655,7 @@ def main():
                         blue_branch_speed_factor,
                         yellow_branch_speed_factor,
                     )
-                elif buttons["reset"].collidepoint(event.pos):
+                elif buttons["reset"].collidepoint(pos):
                     (
                         vehicles,
                         next_vehicle_id,
@@ -1567,57 +1667,57 @@ def main():
                     yellow_branch_speed_factor = INITIAL_YELLOW_BRANCH_SPEED_FACTOR
                     paused = False
                     auto_demo_timer = 0.0
-                elif buttons["blue_minus"].collidepoint(event.pos):
+                elif buttons["blue_minus"].collidepoint(pos):
                     blue_branch_speed_factor = clamp(
                         blue_branch_speed_factor - SPEED_STEP,
                         MIN_SPEED_FACTOR,
                         MAX_SPEED_FACTOR,
                     )
                     auto_demo_mode = False
-                elif buttons["blue_plus"].collidepoint(event.pos):
+                elif buttons["blue_plus"].collidepoint(pos):
                     blue_branch_speed_factor = clamp(
                         blue_branch_speed_factor + SPEED_STEP,
                         MIN_SPEED_FACTOR,
                         MAX_SPEED_FACTOR,
                     )
                     auto_demo_mode = False
-                elif buttons["yellow_minus"].collidepoint(event.pos):
+                elif buttons["yellow_minus"].collidepoint(pos):
                     yellow_branch_speed_factor = clamp(
                         yellow_branch_speed_factor - SPEED_STEP,
                         MIN_SPEED_FACTOR,
                         MAX_SPEED_FACTOR,
                     )
                     auto_demo_mode = False
-                elif buttons["yellow_plus"].collidepoint(event.pos):
+                elif buttons["yellow_plus"].collidepoint(pos):
                     yellow_branch_speed_factor = clamp(
                         yellow_branch_speed_factor + SPEED_STEP,
                         MIN_SPEED_FACTOR,
                         MAX_SPEED_FACTOR,
                     )
                     auto_demo_mode = False
-                elif buttons["preset_balanced"].collidepoint(event.pos):
+                elif buttons["preset_balanced"].collidepoint(pos):
                     blue_branch_speed_factor, yellow_branch_speed_factor = apply_preset(
                         "balanced"
                     )
                     auto_demo_mode = False
-                elif buttons["preset_blue"].collidepoint(event.pos):
+                elif buttons["preset_blue"].collidepoint(pos):
                     blue_branch_speed_factor, yellow_branch_speed_factor = apply_preset(
                         "blue_faster"
                     )
                     auto_demo_mode = False
-                elif buttons["preset_yellow"].collidepoint(event.pos):
+                elif buttons["preset_yellow"].collidepoint(pos):
                     blue_branch_speed_factor, yellow_branch_speed_factor = apply_preset(
                         "yellow_faster"
                     )
                     auto_demo_mode = False
-                elif buttons["toggle_labels"].collidepoint(event.pos):
+                elif buttons["toggle_labels"].collidepoint(pos):
                     show_labels = not show_labels
-                elif buttons["toggle_fullscreen"].collidepoint(event.pos):
+                elif buttons["toggle_fullscreen"].collidepoint(pos):
                     fullscreen = not fullscreen
                     screen = create_display(fullscreen=fullscreen)
-                elif buttons["toggle_presentation"].collidepoint(event.pos):
+                elif buttons["toggle_presentation"].collidepoint(pos):
                     presentation_mode = not presentation_mode
-                elif buttons["toggle_auto_demo"].collidepoint(event.pos):
+                elif buttons["toggle_auto_demo"].collidepoint(pos):
                     auto_demo_mode = not auto_demo_mode
                     if auto_demo_mode:
                         (
@@ -1661,13 +1761,13 @@ def main():
             vehicles,
             current_takt,
             buttons,
-            blue_branch_speed_factor,
-            yellow_branch_speed_factor,
-            paused,
-            show_labels,
-            fullscreen,
-            presentation_mode,
-            auto_demo_mode,
+            blue_speed_factor=blue_branch_speed_factor,
+            yellow_speed_factor=yellow_branch_speed_factor,
+            paused=paused,
+            show_labels=show_labels,
+            fullscreen=fullscreen,
+            presentation_mode=presentation_mode,
+            auto_demo_mode=auto_demo_mode,
         )
         pygame.display.flip()
 

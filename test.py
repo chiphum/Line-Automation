@@ -97,6 +97,7 @@ MAX_SPEED_FACTOR = 2.00
 MIN_WINDOW_WIDTH = 1100
 MIN_WINDOW_HEIGHT = 700
 
+
 # ----------------------------
 # Vehicle model
 # ----------------------------
@@ -127,11 +128,13 @@ class Vehicle:
             return self.branch_pitch_float <= NUM_PITCHES_YELLOW + 0.8
         return False
 
+
 # ----------------------------
 # Utility helpers
 # ----------------------------
 def clamp(value, min_value, max_value):
     return max(min_value, min(max_value, value))
+
 
 def scaled_y(base_y, screen_height):
     top_reserved = 130
@@ -141,8 +144,10 @@ def scaled_y(base_y, screen_height):
     relative = (base_y - top_reserved) / base_drawable
     return int(top_reserved + relative * current_drawable)
 
+
 def make_font(size, bold=False):
     return pygame.font.SysFont("arial", max(12, int(size)), bold=bold)
+
 
 # ----------------------------
 # Responsive proportional layout
@@ -185,7 +190,9 @@ def compute_layout(screen_width, screen_height):
     rail_thickness = clamp(rail_thickness, 10, 18)
     rail_offset_y = int(BASE_RAIL_OFFSET_Y * ui_scale)
 
-    step_guess = int((total_width - branch_offset_x) / (NUM_PITCHES_MAIN + NUM_PITCHES_BLUE))
+    step_guess = int(
+        (total_width - branch_offset_x) / (NUM_PITCHES_MAIN + NUM_PITCHES_BLUE)
+    )
     step_guess = max(step_guess, MIN_PITCH_WIDTH + MIN_PITCH_GAP)
 
     pitch_gap = max(MIN_PITCH_GAP, min(MAX_PITCH_GAP, int(step_guess * 0.10)))
@@ -224,31 +231,31 @@ def compute_layout(screen_width, screen_height):
             control_panel_x + int(BLUE_MINUS_X_OFFSET * width_scale),
             control_panel_y + int(36 * ui_scale),
             blue_minus_w,
-            blue_minus_h
+            blue_minus_h,
         ),
         "blue_plus": pygame.Rect(
             control_panel_x + int(BLUE_PLUS_X_OFFSET * width_scale),
             control_panel_y + int(36 * ui_scale),
             plus_w,
-            plus_h
+            plus_h,
         ),
         "yellow_minus": pygame.Rect(
             control_panel_x + int(YELLOW_MINUS_X_OFFSET * width_scale),
             control_panel_y + int(36 * ui_scale),
             blue_minus_w,
-            blue_minus_h
+            blue_minus_h,
         ),
         "yellow_plus": pygame.Rect(
             control_panel_x + int(YELLOW_PLUS_X_OFFSET * width_scale),
             control_panel_y + int(36 * ui_scale),
             plus_w,
-            plus_h
+            plus_h,
         ),
         "reset": pygame.Rect(
             control_panel_x + int(RESET_BUTTON_X_OFFSET * width_scale),
             control_panel_y + int(RESET_BUTTON_Y_OFFSET * ui_scale),
             reset_w,
-            reset_h
+            reset_h,
         ),
     }
 
@@ -294,6 +301,7 @@ def compute_layout(screen_width, screen_height):
         "height_scale": height_scale,
     }
 
+
 # ----------------------------
 # Geometry helpers
 # ----------------------------
@@ -302,28 +310,42 @@ def main_pitch_rect(layout, pitch_num):
     y = layout["main_top"]
     return pygame.Rect(int(x), int(y), layout["pitch_width"], layout["pitch_height"])
 
+
 def split_origin(layout):
     rect = main_pitch_rect(layout, SPLIT_PITCH)
     return rect.x + rect.width, rect.y + rect.height / 2
 
+
 def branch_pitch_rect(layout, branch_name, pitch_num):
     x = layout["branch_start_x"] + (pitch_num - 1) * layout["pitch_step"]
-    y = layout["blue_branch_top"] if branch_name == "blue_branch" else layout["yellow_branch_top"]
+    y = (
+        layout["blue_branch_top"]
+        if branch_name == "blue_branch"
+        else layout["yellow_branch_top"]
+    )
     return pygame.Rect(int(x), int(y), layout["pitch_width"], layout["pitch_height"])
+
 
 def interpolate_position(rect_a, rect_b, frac):
     x = rect_a.x + (rect_b.x - rect_a.x) * frac
     y = rect_a.y + (rect_b.y - rect_a.y) * frac
     return x, y
 
+
 def get_vehicle_xy(layout, route, pitch_float):
     if route == "main":
         if pitch_float <= 1:
             rect = main_pitch_rect(layout, 1)
-            return rect.x + layout["pitch_width"] * 0.12, rect.y + layout["pitch_height"] * 0.42
+            return (
+                rect.x + layout["pitch_width"] * 0.12,
+                rect.y + layout["pitch_height"] * 0.42,
+            )
         if pitch_float >= NUM_PITCHES_MAIN:
             rect = main_pitch_rect(layout, NUM_PITCHES_MAIN)
-            return rect.x + layout["pitch_width"] * 0.12, rect.y + layout["pitch_height"] * 0.42
+            return (
+                rect.x + layout["pitch_width"] * 0.12,
+                rect.y + layout["pitch_height"] * 0.42,
+            )
         base = int(pitch_float)
         frac = pitch_float - base
         rect_a = main_pitch_rect(layout, base)
@@ -334,10 +356,16 @@ def get_vehicle_xy(layout, route, pitch_float):
     if route == "blue_branch":
         if pitch_float <= 1:
             rect = branch_pitch_rect(layout, "blue_branch", 1)
-            return rect.x + layout["pitch_width"] * 0.12, rect.y + layout["pitch_height"] * 0.42
+            return (
+                rect.x + layout["pitch_width"] * 0.12,
+                rect.y + layout["pitch_height"] * 0.42,
+            )
         if pitch_float >= NUM_PITCHES_BLUE:
             rect = branch_pitch_rect(layout, "blue_branch", NUM_PITCHES_BLUE)
-            return rect.x + layout["pitch_width"] * 0.12, rect.y + layout["pitch_height"] * 0.42
+            return (
+                rect.x + layout["pitch_width"] * 0.12,
+                rect.y + layout["pitch_height"] * 0.42,
+            )
         base = int(pitch_float)
         frac = pitch_float - base
         rect_a = branch_pitch_rect(layout, "blue_branch", base)
@@ -348,10 +376,16 @@ def get_vehicle_xy(layout, route, pitch_float):
     if route == "yellow_branch":
         if pitch_float <= 1:
             rect = branch_pitch_rect(layout, "yellow_branch", 1)
-            return rect.x + layout["pitch_width"] * 0.12, rect.y + layout["pitch_height"] * 0.42
+            return (
+                rect.x + layout["pitch_width"] * 0.12,
+                rect.y + layout["pitch_height"] * 0.42,
+            )
         if pitch_float >= NUM_PITCHES_YELLOW:
             rect = branch_pitch_rect(layout, "yellow_branch", NUM_PITCHES_YELLOW)
-            return rect.x + layout["pitch_width"] * 0.12, rect.y + layout["pitch_height"] * 0.42
+            return (
+                rect.x + layout["pitch_width"] * 0.12,
+                rect.y + layout["pitch_height"] * 0.42,
+            )
         base = int(pitch_float)
         frac = pitch_float - base
         rect_a = branch_pitch_rect(layout, "yellow_branch", base)
@@ -360,6 +394,7 @@ def get_vehicle_xy(layout, route, pitch_float):
         return x + layout["pitch_width"] * 0.12, y + layout["pitch_height"] * 0.42
 
     return 0, 0
+
 
 # ----------------------------
 # Drawing helpers
@@ -373,6 +408,7 @@ def draw_text(surface, text, font, color, x, y, center=False):
         rect.topleft = (x, y)
     surface.blit(rendered, rect)
 
+
 def draw_pitch(surface, font, pitch_num, rect, prefix, pitch_label_offset):
     pygame.draw.rect(surface, LINE_COLOR, rect, border_radius=8)
     pygame.draw.rect(surface, LINE_BORDER, rect, width=2, border_radius=8)
@@ -380,6 +416,7 @@ def draw_pitch(surface, font, pitch_num, rect, prefix, pitch_label_offset):
     label = font.render(f"{prefix}{pitch_num}", True, TEXT_COLOR)
     label_rect = label.get_rect(center=(rect.centerx, rect.bottom + pitch_label_offset))
     surface.blit(label, label_rect)
+
 
 def draw_vehicle(surface, x, y, scale, body_color, current_pitch_width, ui_scale):
     body_w = int(min(62 * ui_scale, current_pitch_width * 0.78) * scale)
@@ -389,14 +426,37 @@ def draw_vehicle(surface, x, y, scale, body_color, current_pitch_width, ui_scale
     wheel_d = int(11 * ui_scale * scale)
 
     body_rect = pygame.Rect(int(x), int(y), body_w, body_h)
-    pygame.draw.rect(surface, body_color, body_rect, border_radius=max(5, int(8 * ui_scale)))
+    pygame.draw.rect(
+        surface, body_color, body_rect, border_radius=max(5, int(8 * ui_scale))
+    )
 
-    cabin_rect = pygame.Rect(int(x + body_w * 0.28), int(y - 13 * ui_scale * scale), cabin_w, cabin_h)
-    pygame.draw.rect(surface, VEHICLE_WINDOW, cabin_rect, border_radius=max(4, int(6 * ui_scale)))
-    pygame.draw.rect(surface, body_color, cabin_rect, width=max(1, int(2 * ui_scale)), border_radius=max(4, int(6 * ui_scale)))
+    cabin_rect = pygame.Rect(
+        int(x + body_w * 0.28), int(y - 13 * ui_scale * scale), cabin_w, cabin_h
+    )
+    pygame.draw.rect(
+        surface, VEHICLE_WINDOW, cabin_rect, border_radius=max(4, int(6 * ui_scale))
+    )
+    pygame.draw.rect(
+        surface,
+        body_color,
+        cabin_rect,
+        width=max(1, int(2 * ui_scale)),
+        border_radius=max(4, int(6 * ui_scale)),
+    )
 
-    pygame.draw.circle(surface, WHEEL_COLOR, (int(x + body_w * 0.20), int(y + 22 * ui_scale * scale)), max(2, wheel_d // 2))
-    pygame.draw.circle(surface, WHEEL_COLOR, (int(x + body_w * 0.78), int(y + 22 * ui_scale * scale)), max(2, wheel_d // 2))
+    pygame.draw.circle(
+        surface,
+        WHEEL_COLOR,
+        (int(x + body_w * 0.20), int(y + 22 * ui_scale * scale)),
+        max(2, wheel_d // 2),
+    )
+    pygame.draw.circle(
+        surface,
+        WHEEL_COLOR,
+        (int(x + body_w * 0.78), int(y + 22 * ui_scale * scale)),
+        max(2, wheel_d // 2),
+    )
+
 
 def draw_button(surface, rect, font, text, mouse_pos):
     is_hovered = rect.collidepoint(mouse_pos)
@@ -404,6 +464,7 @@ def draw_button(surface, rect, font, text, mouse_pos):
     pygame.draw.rect(surface, color, rect, border_radius=8)
     pygame.draw.rect(surface, ACCENT_BLUE, rect, width=2, border_radius=8)
     draw_text(surface, text, font, BUTTON_TEXT, rect.centerx, rect.centery, center=True)
+
 
 def draw_branch_connector(surface, layout, branch_name, color):
     split_x, split_y = split_origin(layout)
@@ -422,6 +483,7 @@ def draw_branch_connector(surface, layout, branch_name, color):
     ]
     pygame.draw.lines(surface, color, False, points, line_width)
 
+
 def draw_main_line(surface, layout, label_font):
     first_rect = main_pitch_rect(layout, 1)
     last_rect = main_pitch_rect(layout, NUM_PITCHES_MAIN)
@@ -430,25 +492,43 @@ def draw_main_line(surface, layout, label_font):
         first_rect.x,
         first_rect.y - layout["main_label_offset"],
         last_rect.right - first_rect.x,
-        max(24, int(30 * layout["ui_scale"]))
+        max(24, int(30 * layout["ui_scale"])),
     )
     pygame.draw.rect(surface, ACCENT_GREEN, label_rect, border_radius=4)
-    draw_text(surface, "Main Line", label_font, (255, 255, 255), label_rect.centerx, label_rect.centery, center=True)
+    draw_text(
+        surface,
+        "Main Line",
+        label_font,
+        (255, 255, 255),
+        label_rect.centerx,
+        label_rect.centery,
+        center=True,
+    )
 
     rail_y = first_rect.y + layout["pitch_height"] / 2 - layout["rail_offset_y"]
     rail_rect = pygame.Rect(
         first_rect.x,
         int(rail_y),
         last_rect.right - first_rect.x,
-        layout["rail_thickness"]
+        layout["rail_thickness"],
     )
     pygame.draw.rect(surface, RAIL_COLOR, rail_rect, border_radius=3)
 
     for i in range(1, NUM_PITCHES_MAIN + 1):
-        draw_pitch(surface, label_font, i, main_pitch_rect(layout, i), "P", layout["pitch_label_offset"])
+        draw_pitch(
+            surface,
+            label_font,
+            i,
+            main_pitch_rect(layout, i),
+            "P",
+            layout["pitch_label_offset"],
+        )
+
 
 def draw_branch_line(surface, layout, label_font, branch_name, label, prefix):
-    last_pitch = NUM_PITCHES_BLUE if branch_name == "blue_branch" else NUM_PITCHES_YELLOW
+    last_pitch = (
+        NUM_PITCHES_BLUE if branch_name == "blue_branch" else NUM_PITCHES_YELLOW
+    )
     rect1 = branch_pitch_rect(layout, branch_name, 1)
     rect_last = branch_pitch_rect(layout, branch_name, last_pitch)
 
@@ -456,22 +536,35 @@ def draw_branch_line(surface, layout, label_font, branch_name, label, prefix):
         rect1.x,
         rect1.y - layout["branch_label_offset"],
         rect_last.right - rect1.x,
-        max(24, int(30 * layout["ui_scale"]))
+        max(24, int(30 * layout["ui_scale"])),
     )
     pygame.draw.rect(surface, ACCENT_GREEN, label_rect, border_radius=4)
-    draw_text(surface, label, label_font, (255, 255, 255), label_rect.centerx, label_rect.centery, center=True)
+    draw_text(
+        surface,
+        label,
+        label_font,
+        (255, 255, 255),
+        label_rect.centerx,
+        label_rect.centery,
+        center=True,
+    )
 
     rail_y = rect1.y + layout["pitch_height"] / 2 - layout["rail_offset_y"]
     rail_rect = pygame.Rect(
-        rect1.x,
-        int(rail_y),
-        rect_last.right - rect1.x,
-        layout["rail_thickness"]
+        rect1.x, int(rail_y), rect_last.right - rect1.x, layout["rail_thickness"]
     )
     pygame.draw.rect(surface, RAIL_COLOR, rail_rect, border_radius=3)
 
     for i in range(1, last_pitch + 1):
-        draw_pitch(surface, label_font, i, branch_pitch_rect(layout, branch_name, i), prefix, layout["pitch_label_offset"])
+        draw_pitch(
+            surface,
+            label_font,
+            i,
+            branch_pitch_rect(layout, branch_name, i),
+            prefix,
+            layout["pitch_label_offset"],
+        )
+
 
 def draw_header_controls(surface, layout, blue_speed_factor, yellow_speed_factor):
     fonts = layout["fonts"]
@@ -484,27 +577,65 @@ def draw_header_controls(surface, layout, blue_speed_factor, yellow_speed_factor
         layout["control_panel_x"],
         layout["control_panel_y"],
         layout["control_panel_w"],
-        layout["control_panel_h"]
+        layout["control_panel_h"],
     )
     pygame.draw.rect(surface, PANEL_BG, panel_rect, border_radius=12)
     pygame.draw.rect(surface, PANEL_BORDER, panel_rect, width=2, border_radius=12)
 
-    draw_text(surface, "Blue Speed", subtitle_font, TITLE_COLOR, layout["control_panel_x"] + int(22 * layout["ui_scale"]), layout["control_panel_y"] + int(13 * layout["ui_scale"]))
-    draw_text(surface, f"{blue_speed_factor:.2f}x", subtitle_font, TEXT_COLOR, layout["control_panel_x"] + int(22 * layout["ui_scale"]), layout["control_panel_y"] + int(46 * layout["ui_scale"]))
+    draw_text(
+        surface,
+        "Blue Speed",
+        subtitle_font,
+        TITLE_COLOR,
+        layout["control_panel_x"] + int(22 * layout["ui_scale"]),
+        layout["control_panel_y"] + int(13 * layout["ui_scale"]),
+    )
+    draw_text(
+        surface,
+        f"{blue_speed_factor:.2f}x",
+        subtitle_font,
+        TEXT_COLOR,
+        layout["control_panel_x"] + int(22 * layout["ui_scale"]),
+        layout["control_panel_y"] + int(46 * layout["ui_scale"]),
+    )
 
     draw_button(surface, buttons["blue_minus"], button_font, "-", mouse_pos)
     draw_button(surface, buttons["blue_plus"], button_font, "+", mouse_pos)
 
-    draw_text(surface, "Yellow Speed", subtitle_font, TITLE_COLOR, layout["control_panel_x"] + int(248 * layout["width_scale"]), layout["control_panel_y"] + int(13 * layout["ui_scale"]))
-    draw_text(surface, f"{yellow_speed_factor:.2f}x", subtitle_font, TEXT_COLOR, layout["control_panel_x"] + int(248 * layout["width_scale"]), layout["control_panel_y"] + int(46 * layout["ui_scale"]))
+    draw_text(
+        surface,
+        "Yellow Speed",
+        subtitle_font,
+        TITLE_COLOR,
+        layout["control_panel_x"] + int(248 * layout["width_scale"]),
+        layout["control_panel_y"] + int(13 * layout["ui_scale"]),
+    )
+    draw_text(
+        surface,
+        f"{yellow_speed_factor:.2f}x",
+        subtitle_font,
+        TEXT_COLOR,
+        layout["control_panel_x"] + int(248 * layout["width_scale"]),
+        layout["control_panel_y"] + int(46 * layout["ui_scale"]),
+    )
 
     draw_button(surface, buttons["yellow_minus"], button_font, "-", mouse_pos)
     draw_button(surface, buttons["yellow_plus"], button_font, "+", mouse_pos)
 
-    draw_text(surface, "System", subtitle_font, TITLE_COLOR, layout["control_panel_x"] + int(500 * layout["width_scale"]), layout["control_panel_y"] + int(13 * layout["ui_scale"]))
+    draw_text(
+        surface,
+        "System",
+        subtitle_font,
+        TITLE_COLOR,
+        layout["control_panel_x"] + int(500 * layout["width_scale"]),
+        layout["control_panel_y"] + int(13 * layout["ui_scale"]),
+    )
     draw_button(surface, buttons["reset"], button_font, "Reset", mouse_pos)
 
-def draw_scene(surface, layout, vehicles, takt_display, blue_speed_factor, yellow_speed_factor):
+
+def draw_scene(
+    surface, layout, vehicles, takt_display, blue_speed_factor, yellow_speed_factor
+):
     surface.fill(BG_COLOR)
 
     fonts = layout["fonts"]
@@ -518,7 +649,7 @@ def draw_scene(surface, layout, vehicles, takt_display, blue_speed_factor, yello
         title_font,
         TITLE_COLOR,
         layout["title_x"],
-        layout["title_y"]
+        layout["title_y"],
     )
     draw_text(
         surface,
@@ -526,14 +657,18 @@ def draw_scene(surface, layout, vehicles, takt_display, blue_speed_factor, yello
         subtitle_font,
         TEXT_COLOR,
         layout["takt_x"],
-        layout["takt_y"]
+        layout["takt_y"],
     )
 
     draw_header_controls(surface, layout, blue_speed_factor, yellow_speed_factor)
 
     draw_main_line(surface, layout, label_font)
-    draw_branch_line(surface, layout, label_font, "blue_branch", "Blue Branch Line", "B")
-    draw_branch_line(surface, layout, label_font, "yellow_branch", "Yellow Branch Line", "Y")
+    draw_branch_line(
+        surface, layout, label_font, "blue_branch", "Blue Branch Line", "B"
+    )
+    draw_branch_line(
+        surface, layout, label_font, "yellow_branch", "Yellow Branch Line", "Y"
+    )
 
     draw_branch_connector(surface, layout, "blue_branch", SPLIT_LINE_BLUE)
     draw_branch_connector(surface, layout, "yellow_branch", SPLIT_LINE_YELLOW)
@@ -541,13 +676,39 @@ def draw_scene(surface, layout, vehicles, takt_display, blue_speed_factor, yello
     for vehicle in vehicles:
         if vehicle.route == "main" and vehicle.main_pitch_float is not None:
             x, y = get_vehicle_xy(layout, "main", vehicle.main_pitch_float)
-            draw_vehicle(surface, x, y, 1.0, vehicle.color, layout["pitch_width"], layout["ui_scale"])
+            draw_vehicle(
+                surface,
+                x,
+                y,
+                1.0,
+                vehicle.color,
+                layout["pitch_width"],
+                layout["ui_scale"],
+            )
         elif vehicle.route == "blue_branch" and vehicle.branch_pitch_float is not None:
             x, y = get_vehicle_xy(layout, "blue_branch", vehicle.branch_pitch_float)
-            draw_vehicle(surface, x, y, 1.0, vehicle.color, layout["pitch_width"], layout["ui_scale"])
-        elif vehicle.route == "yellow_branch" and vehicle.branch_pitch_float is not None:
+            draw_vehicle(
+                surface,
+                x,
+                y,
+                1.0,
+                vehicle.color,
+                layout["pitch_width"],
+                layout["ui_scale"],
+            )
+        elif (
+            vehicle.route == "yellow_branch" and vehicle.branch_pitch_float is not None
+        ):
             x, y = get_vehicle_xy(layout, "yellow_branch", vehicle.branch_pitch_float)
-            draw_vehicle(surface, x, y, 1.0, vehicle.color, layout["pitch_width"], layout["ui_scale"])
+            draw_vehicle(
+                surface,
+                x,
+                y,
+                1.0,
+                vehicle.color,
+                layout["pitch_width"],
+                layout["ui_scale"],
+            )
 
     draw_text(
         surface,
@@ -556,8 +717,9 @@ def draw_scene(surface, layout, vehicles, takt_display, blue_speed_factor, yello
         ACCENT_BLUE,
         layout["screen_width"] // 2,
         layout["screen_height"] - max(30, int(35 * layout["ui_scale"])),
-        center=True
+        center=True,
     )
+
 
 # ----------------------------
 # Simulation helpers
@@ -575,12 +737,20 @@ def update_branch_line(branch_vehicles, speed_factor, min_spacing, delta_pitch_m
             proposed_position = vehicle.branch_pitch_float + branch_speed
             vehicle.branch_pitch_float = min(proposed_position, target_position)
 
+
 def try_split_branch(vehicles, color_check, target_route, min_spacing):
-    branch_vehicles = [v for v in vehicles if v.route == target_route and v.branch_pitch_float is not None]
-    last_branch_position = min([v.branch_pitch_float for v in branch_vehicles], default=None)
+    branch_vehicles = [
+        v
+        for v in vehicles
+        if v.route == target_route and v.branch_pitch_float is not None
+    ]
+    last_branch_position = min(
+        [v.branch_pitch_float for v in branch_vehicles], default=None
+    )
 
     candidates = [
-        v for v in vehicles
+        v
+        for v in vehicles
         if v.route == "main"
         and color_check(v)
         and v.main_pitch_float is not None
@@ -604,12 +774,14 @@ def try_split_branch(vehicles, color_check, target_route, min_spacing):
         else:
             vehicle.main_pitch_float = SPLIT_PITCH
 
+
 def reset_simulation():
     vehicles = [Vehicle(1)]
     next_vehicle_id = 2
     elapsed_since_takt = 0.0
     current_takt = 1
     return vehicles, next_vehicle_id, elapsed_since_takt, current_takt
+
 
 # ----------------------------
 # Main loop
@@ -642,24 +814,44 @@ def main():
             elif event.type == pygame.VIDEORESIZE:
                 screen_width = max(MIN_WINDOW_WIDTH, event.w)
                 screen_height = max(MIN_WINDOW_HEIGHT, event.h)
-                screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
+                screen = pygame.display.set_mode(
+                    (screen_width, screen_height), pygame.RESIZABLE
+                )
                 layout = compute_layout(screen_width, screen_height)
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 buttons = layout["buttons"]
 
                 if buttons["reset"].collidepoint(event.pos):
-                    vehicles, next_vehicle_id, elapsed_since_takt, current_takt = reset_simulation()
+                    vehicles, next_vehicle_id, elapsed_since_takt, current_takt = (
+                        reset_simulation()
+                    )
                     blue_branch_speed_factor = INITIAL_BLUE_BRANCH_SPEED_FACTOR
                     yellow_branch_speed_factor = INITIAL_YELLOW_BRANCH_SPEED_FACTOR
                 elif buttons["blue_minus"].collidepoint(event.pos):
-                    blue_branch_speed_factor = clamp(blue_branch_speed_factor - SPEED_STEP, MIN_SPEED_FACTOR, MAX_SPEED_FACTOR)
+                    blue_branch_speed_factor = clamp(
+                        blue_branch_speed_factor - SPEED_STEP,
+                        MIN_SPEED_FACTOR,
+                        MAX_SPEED_FACTOR,
+                    )
                 elif buttons["blue_plus"].collidepoint(event.pos):
-                    blue_branch_speed_factor = clamp(blue_branch_speed_factor + SPEED_STEP, MIN_SPEED_FACTOR, MAX_SPEED_FACTOR)
+                    blue_branch_speed_factor = clamp(
+                        blue_branch_speed_factor + SPEED_STEP,
+                        MIN_SPEED_FACTOR,
+                        MAX_SPEED_FACTOR,
+                    )
                 elif buttons["yellow_minus"].collidepoint(event.pos):
-                    yellow_branch_speed_factor = clamp(yellow_branch_speed_factor - SPEED_STEP, MIN_SPEED_FACTOR, MAX_SPEED_FACTOR)
+                    yellow_branch_speed_factor = clamp(
+                        yellow_branch_speed_factor - SPEED_STEP,
+                        MIN_SPEED_FACTOR,
+                        MAX_SPEED_FACTOR,
+                    )
                 elif buttons["yellow_plus"].collidepoint(event.pos):
-                    yellow_branch_speed_factor = clamp(yellow_branch_speed_factor + SPEED_STEP, MIN_SPEED_FACTOR, MAX_SPEED_FACTOR)
+                    yellow_branch_speed_factor = clamp(
+                        yellow_branch_speed_factor + SPEED_STEP,
+                        MIN_SPEED_FACTOR,
+                        MAX_SPEED_FACTOR,
+                    )
 
         delta_pitch_main = dt / TAKT_TIME_MAIN
 
@@ -671,29 +863,37 @@ def main():
             vehicles,
             color_check=lambda v: v.is_blue(),
             target_route="blue_branch",
-            min_spacing=BLUE_BRANCH_MIN_SPACING
+            min_spacing=BLUE_BRANCH_MIN_SPACING,
         )
         try_split_branch(
             vehicles,
             color_check=lambda v: v.is_yellow(),
             target_route="yellow_branch",
-            min_spacing=YELLOW_BRANCH_MIN_SPACING
+            min_spacing=YELLOW_BRANCH_MIN_SPACING,
         )
 
-        blue_branch_vehicles = [v for v in vehicles if v.route == "blue_branch" and v.branch_pitch_float is not None]
-        yellow_branch_vehicles = [v for v in vehicles if v.route == "yellow_branch" and v.branch_pitch_float is not None]
+        blue_branch_vehicles = [
+            v
+            for v in vehicles
+            if v.route == "blue_branch" and v.branch_pitch_float is not None
+        ]
+        yellow_branch_vehicles = [
+            v
+            for v in vehicles
+            if v.route == "yellow_branch" and v.branch_pitch_float is not None
+        ]
 
         update_branch_line(
             blue_branch_vehicles,
             speed_factor=blue_branch_speed_factor,
             min_spacing=BLUE_BRANCH_MIN_SPACING,
-            delta_pitch_main=delta_pitch_main
+            delta_pitch_main=delta_pitch_main,
         )
         update_branch_line(
             yellow_branch_vehicles,
             speed_factor=yellow_branch_speed_factor,
             min_spacing=YELLOW_BRANCH_MIN_SPACING,
-            delta_pitch_main=delta_pitch_main
+            delta_pitch_main=delta_pitch_main,
         )
 
         if elapsed_since_takt >= TAKT_TIME_MAIN:
@@ -711,12 +911,13 @@ def main():
             vehicles,
             current_takt,
             blue_branch_speed_factor,
-            yellow_branch_speed_factor
+            yellow_branch_speed_factor,
         )
         pygame.display.flip()
 
     pygame.quit()
     sys.exit()
+
 
 if __name__ == "__main__":
     main()
