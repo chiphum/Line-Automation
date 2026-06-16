@@ -76,12 +76,20 @@ STATUS_Y = 70
 CONTROL_PANEL_X = 40
 CONTROL_PANEL_Y = 110
 CONTROL_PANEL_W = 1520
-CONTROL_PANEL_H = 188  # expanded so top controls + bottom row fit cleanly
+#CONTROL_PANEL_H = 200  # expanded so top controls + bottom row fit cleanly
+CONTROL_PANEL_H = 220   
 
 # Header row anchors
+#TOP_ROW_Y = CONTROL_PANEL_Y + 34
 TOP_ROW_Y = CONTROL_PANEL_Y + 34
-SECOND_ROW_Y = CONTROL_PANEL_Y + 86
-BOTTOM_ROW_Y = CONTROL_PANEL_Y + CONTROL_PANEL_H - 46
+#SECOND_ROW_Y = CONTROL_PANEL_Y + 86
+
+ROW_GAP = 68
+SECOND_ROW_Y = TOP_ROW_Y + ROW_GAP
+
+BOTTOM_PADDING = 50
+
+BOTTOM_ROW_Y = CONTROL_PANEL_Y + CONTROL_PANEL_H - BOTTOM_PADDING
 BOTTOM_ROW_START_X = CONTROL_PANEL_X + 40
 BOTTOM_STATUS_X = CONTROL_PANEL_X + 660
 BOTTOM_ROW_SPACING = 170
@@ -616,8 +624,17 @@ def draw_header_controls(surface, fonts, buttons,
             CONTROL_PANEL_X + 260, CONTROL_PANEL_Y + 8)
     draw_text(surface, "Playback", small_font, SUBTLE_TEXT,
             CONTROL_PANEL_X + 490, CONTROL_PANEL_Y + 8)
-    draw_text(surface, "Presets", small_font, SUBTLE_TEXT,
-            CONTROL_PANEL_X + 640, CONTROL_PANEL_Y + 8)
+    # draw_text(surface, "Presets", small_font, SUBTLE_TEXT,
+    #         CONTROL_PANEL_X + 640, CONTROL_PANEL_Y + 8)
+    draw_text(
+    surface,
+    "Presets",
+    small_font,
+    SUBTLE_TEXT,
+    CONTROL_PANEL_X + 640,
+    SECOND_ROW_Y - 22
+    )
+
     draw_text(surface, "Display", small_font, SUBTLE_TEXT,
             CONTROL_PANEL_X + 1080, CONTROL_PANEL_Y + 8)
 
