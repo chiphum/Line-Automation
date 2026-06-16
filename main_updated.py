@@ -779,8 +779,12 @@ def draw_presentation_banner(surface, fonts, paused,
     _, subtitle_font, _, small_font, _ = fonts
     overlay = pygame.Surface((520, 96), pygame.SRCALPHA)
     overlay.fill(OVERLAY_BG)
-    surface.blit(overlay, (SCREEN_WIDTH - 560, 18))
-    box = pygame.Rect(SCREEN_WIDTH - 560, 18, 520, 96)
+    banner_x = SCREEN_WIDTH - 560
+    banner_y = TITLE_Y + 60   # ✅ small downward shift only
+
+    surface.blit(overlay, (banner_x, banner_y))
+    box = pygame.Rect(banner_x, banner_y, 520, 96)
+
     pygame.draw.rect(surface, PANEL_BORDER, box, width=1, border_radius=10)
     draw_text(surface, "Presentation Mode", subtitle_font, TITLE_COLOR,
               box.x + 16, box.y + 12)
